@@ -2,7 +2,7 @@
 <html lang="id" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Transaksi - MoneTrac</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,40 +29,40 @@
       <!-- Main Page Content -->
       <main class="content-wrapper">
         
-<div class="card" style="margin-bottom:24px;">
-  <!-- Filter Controls -->
-  <div style="display:grid;grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));gap:14px;align-items:flex-end;">
+<!-- Filter Controls Card -->
+<div class="card" style="margin-bottom:18px;">
+  <div style="display:grid;grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));gap:10px;align-items:flex-end;">
     <div class="form-group" style="margin:0;">
-      <label class="form-label">Cari Keterangan / Kategori</label>
-      <input type="text" id="search-tx" class="form-control" placeholder="Ketik kata kunci..." oninput="applyFiltersAndRender()">
+      <label class="form-label">Pencarian</label>
+      <input type="text" id="search-tx" class="form-control" placeholder="Kata kunci..." oninput="applyFiltersAndRender()">
     </div>
 
     <div class="form-group" style="margin:0;">
       <label class="form-label">Tipe Transaksi</label>
       <select id="filter-type" class="form-control" onchange="applyFiltersAndRender()">
         <option value="all">Semua Tipe</option>
-        <option value="Expense">Pengeluaran (Expense)</option>
-        <option value="Income">Pemasukan (Income)</option>
-        <option value="Transfer">Transfer Saldo</option>
+        <option value="Expense">Pengeluaran</option>
+        <option value="Income">Pemasukan</option>
+        <option value="Transfer">Transfer</option>
       </select>
     </div>
 
     <div class="form-group" style="margin:0;">
-      <label class="form-label">Filter Akun</label>
+      <label class="form-label">Akun</label>
       <select id="filter-account" class="form-control" onchange="applyFiltersAndRender()">
         <option value="all">Semua Akun</option>
       </select>
     </div>
 
     <div class="form-group" style="margin:0;">
-      <label class="form-label">Filter Kategori</label>
+      <label class="form-label">Kategori</label>
       <select id="filter-category" class="form-control" onchange="applyFiltersAndRender()">
         <option value="all">Semua Kategori</option>
       </select>
     </div>
 
     <div class="form-group" style="margin:0;">
-      <label class="form-label">Mulai Tanggal</label>
+      <label class="form-label">Dari Tanggal</label>
       <input type="date" id="filter-start-date" class="form-control" onchange="applyFiltersAndRender()">
     </div>
 
@@ -73,19 +73,19 @@
   </div>
 </div>
 
-<!-- Filter Summary Cards -->
+<!-- Filter Summary & Action Buttons -->
 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
-  <div style="display:flex;gap:16px;align-items:center;">
-    <span class="badge badge-income" style="font-size:0.85rem;padding:6px 12px;">
-      Pemasukan: <span id="filtered-income" style="margin-left:4px;">Rp 0</span>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <span class="badge badge-income">
+      Masuk: <span id="filtered-income" style="margin-left:4px;">Rp 0</span>
     </span>
-    <span class="badge badge-expense" style="font-size:0.85rem;padding:6px 12px;">
-      Pengeluaran: <span id="filtered-expense" style="margin-left:4px;">Rp 0</span>
+    <span class="badge badge-expense">
+      Keluar: <span id="filtered-expense" style="margin-left:4px;">Rp 0</span>
     </span>
-    <span id="filtered-count" style="font-size:0.85rem;color:var(--text-muted);font-weight:600;">0 Transaksi</span>
+    <span id="filtered-count" style="font-size:0.8rem;color:var(--text-muted);font-weight:600;">0 Transaksi</span>
   </div>
 
-  <div style="display:flex;gap:10px;">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;width:auto;">
     <button class="btn btn-secondary btn-sm" onclick="exportTransactionsCSV()">
       <i class="fa-solid fa-file-csv"></i> Ekspor CSV
     </button>
@@ -103,21 +103,21 @@
         <tr>
           <th>Tanggal</th>
           <th>Tipe</th>
-          <th>Akun (Asal ➔ Tujuan)</th>
+          <th>Akun</th>
           <th>Kategori</th>
           <th>Keterangan</th>
-          <th style="text-align:right;">Nominal (Rp)</th>
-          <th style="text-align:center;width:100px;">Aksi</th>
+          <th style="text-align:right;">Nominal</th>
+          <th style="text-align:center;width:80px;">Aksi</th>
         </tr>
       </thead>
       <tbody id="tx-tbody">
-        <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);">Memuat data transaksi...</td></tr>
+        <tr><td colspan="7" style="text-align:center;padding:28px;color:var(--text-muted);">Memuat data transaksi...</td></tr>
       </tbody>
     </table>
   </div>
 
   <!-- Pagination Controls -->
-  <div id="tx-pagination" style="display:flex;justify-content:space-between;align-items:center;padding-top:20px;border-top:1px solid var(--border-color);margin-top:16px;">
+  <div id="tx-pagination" style="display:flex;justify-content:space-between;align-items:center;padding-top:16px;border-top:1px solid var(--border-color);margin-top:12px;gap:8px;flex-wrap:wrap;">
   </div>
 </div>
 

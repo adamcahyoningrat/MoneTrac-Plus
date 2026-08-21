@@ -1,5 +1,5 @@
 /**
- * MONETRAC - DASHBOARD PAGE LOGIC
+ * MONETRAC - DASHBOARD PAGE LOGIC (WITH RESPONSIVE CHARTS & WIDGETS)
  */
 
 let cashflowChart = null;
@@ -84,17 +84,17 @@ async function renderDashboard() {
         return `
           <tr>
             <td>
-              <div style="font-weight:600;color:var(--text-primary);">${Utils.escapeHTML(t.description || t.category_name || t.category || t.type)}</div>
-              <div style="font-size:0.78rem;color:var(--text-muted);">${Utils.formatDate(t.date, "short")}</div>
+              <div style="font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px;">${Utils.escapeHTML(t.description || t.category_name || t.category || t.type)}</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);">${Utils.formatDate(t.date, "short")}</div>
             </td>
             <td>
               <span class="badge ${badgeClass}"><i class="fa-solid ${icon}"></i> ${t.type}</span>
             </td>
             <td>
-              <span style="font-size:0.85rem;color:var(--text-secondary);">${accountDisplay}</span>
+              <span style="font-size:0.82rem;color:var(--text-secondary);white-space:nowrap;">${accountDisplay}</span>
             </td>
             <td>
-              <span style="font-size:0.85rem;color:var(--text-secondary);">${Utils.escapeHTML(t.category_name || t.category || '-')}</span>
+              <span style="font-size:0.82rem;color:var(--text-secondary);white-space:nowrap;">${Utils.escapeHTML(t.category_name || t.category || '-')}</span>
             </td>
             <td style="text-align:right;">
               <span class="${amountClass}">
@@ -111,42 +111,42 @@ async function renderDashboard() {
   const accWidget = document.getElementById("dashboard-accounts-list");
   if (accWidget) {
     accWidget.innerHTML = accounts.map(a => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:var(--radius-md);background:var(--bg-hover);border:1px solid var(--border-color);">
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:36px;height:36px;border-radius:var(--radius-sm);background:${a.color}22;color:${a.color};display:flex;align-items:center;justify-content:center;font-size:1.1rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:var(--radius-md);background:var(--bg-hover);border:1px solid var(--border-color);gap:8px;">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
+          <div style="width:34px;height:34px;border-radius:var(--radius-sm);background:${a.color}22;color:${a.color};display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0;">
             <i class="fa-solid fa-${a.icon || 'wallet'}"></i>
           </div>
-          <div>
-            <div style="font-weight:600;font-size:0.9rem;color:var(--text-primary);">${Utils.escapeHTML(a.name)}</div>
-            <div style="font-size:0.75rem;color:var(--text-muted);">${a.type}</div>
+          <div style="min-width:0;">
+            <div style="font-weight:600;font-size:0.88rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${Utils.escapeHTML(a.name)}</div>
+            <div style="font-size:0.72rem;color:var(--text-muted);">${a.type}</div>
           </div>
         </div>
-        <div style="font-weight:700;font-size:0.95rem;color:var(--text-primary);">
+        <div style="font-weight:700;font-size:0.9rem;color:var(--text-primary);flex-shrink:0;">
           ${Utils.formatCurrency(a.balance)}
         </div>
       </div>
-    `).join('') || `<div style="color:var(--text-muted);font-size:0.85rem;text-align:center;">Belum ada akun</div>`;
+    `).join('') || `<div style="color:var(--text-muted);font-size:0.82rem;text-align:center;">Belum ada akun</div>`;
   }
 
   // 5. Render Savings Goals Widget
   const savingsWidget = document.getElementById("dashboard-savings-list");
   if (savingsWidget) {
     if (!savingsGoals.length) {
-      savingsWidget.innerHTML = `<div style="color:var(--text-muted);font-size:0.85rem;text-align:center;padding:12px;">Belum ada target tabungan. <a href="savings.html">Buat target</a></div>`;
+      savingsWidget.innerHTML = `<div style="color:var(--text-muted);font-size:0.82rem;text-align:center;padding:10px;">Belum ada target tabungan. <a href="savings.html">Buat target</a></div>`;
     } else {
       savingsWidget.innerHTML = savingsGoals.slice(0, 3).map(g => {
         const percent = Math.min(100, Math.round(((Number(g.current_amount) || 0) / (Number(g.target_amount) || 1)) * 100));
         return `
-          <div style="padding:12px 14px;border-radius:var(--radius-md);background:var(--bg-hover);border:1px solid var(--border-color);display:flex;flex-direction:column;gap:8px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-              <span style="font-weight:600;font-size:0.9rem;color:var(--text-primary);">${Utils.escapeHTML(g.name)}</span>
-              <span style="font-size:0.8rem;font-weight:700;color:var(--primary);">${percent}%</span>
+          <div style="padding:10px 12px;border-radius:var(--radius-md);background:var(--bg-hover);border:1px solid var(--border-color);display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+              <span style="font-weight:600;font-size:0.88rem;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${Utils.escapeHTML(g.name)}</span>
+              <span style="font-size:0.78rem;font-weight:700;color:var(--primary);flex-shrink:0;">${percent}%</span>
             </div>
             <div class="progress-container" style="height:6px;">
               <div class="progress-bar" style="width:${percent}%;background:${g.color || 'var(--primary)'};"></div>
             </div>
-            <div style="display:flex;justify-content:space-between;font-size:0.78rem;color:var(--text-muted);">
-              <span>Terkumpul: ${Utils.formatCurrency(g.current_amount)}</span>
+            <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-muted);">
+              <span>${Utils.formatCurrency(g.current_amount)}</span>
               <span>Target: ${Utils.formatCurrency(g.target_amount)}</span>
             </div>
           </div>
@@ -155,11 +155,13 @@ async function renderDashboard() {
     }
   }
 
-  // 6. Render Charts
+  // 6. Render Responsive Charts
   renderCharts(transactions);
 }
 
 function renderCharts(transactions) {
+  const isMobile = window.innerWidth < 768;
+
   // Monthly Cashflow (Last 6 Months)
   const monthLabels = [];
   const incomeData = [];
@@ -197,13 +199,13 @@ function renderCharts(transactions) {
             label: "Pemasukan",
             data: incomeData,
             backgroundColor: "#10b981",
-            borderRadius: 6
+            borderRadius: 4
           },
           {
             label: "Pengeluaran",
             data: expenseData,
             backgroundColor: "#ef4444",
-            borderRadius: 6
+            borderRadius: 4
           }
         ]
       },
@@ -211,11 +213,28 @@ function renderCharts(transactions) {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { position: "top", labels: { color: "#94a3b8" } }
+          legend: {
+            position: "top",
+            labels: {
+              color: "#94a3b8",
+              boxWidth: 12,
+              font: { size: isMobile ? 10 : 12 }
+            }
+          }
         },
         scales: {
-          x: { grid: { display: false }, ticks: { color: "#94a3b8" } },
-          y: { grid: { color: "rgba(255,255,255,0.05)" }, ticks: { color: "#94a3b8" } }
+          x: {
+            grid: { display: false },
+            ticks: { color: "#94a3b8", font: { size: isMobile ? 9 : 11 } }
+          },
+          y: {
+            grid: { color: "rgba(255,255,255,0.05)" },
+            ticks: {
+              color: "#94a3b8",
+              font: { size: isMobile ? 9 : 11 },
+              callback: val => (val >= 1000000 ? (val / 1000000) + "jt" : (val >= 1000 ? (val / 1000) + "rb" : val))
+            }
+          }
         }
       }
     });
@@ -257,13 +276,26 @@ function renderCharts(transactions) {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { position: "right", labels: { color: "#94a3b8" } }
+          legend: {
+            position: isMobile ? "bottom" : "right",
+            labels: {
+              color: "#94a3b8",
+              boxWidth: 10,
+              font: { size: isMobile ? 9 : 11 }
+            }
+          }
         },
-        cutout: "70%"
+        cutout: isMobile ? "60%" : "70%"
       }
     });
   }
 }
+
+window.addEventListener("resize", () => {
+  if (cashflowChart || categoryChart) {
+    Storage.getTransactions().then(tx => renderCharts(tx));
+  }
+});
 
 window.onTransactionSaved = () => renderDashboard();
 window.onPrivacyChanged = () => renderDashboard();
