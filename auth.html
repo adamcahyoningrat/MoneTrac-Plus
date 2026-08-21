@@ -2,7 +2,7 @@
 <html lang="id" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Masuk & Daftar - MoneTrac</title>
   
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -22,29 +22,32 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 24px;
-      background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.15), transparent 40%),
-                  radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.1), transparent 40%),
+      padding: 20px;
+      background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.15), transparent 45%),
+                  radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.1), transparent 45%),
                   var(--bg-body);
+      width: 100%;
+      box-sizing: border-box;
     }
     .auth-card {
       background: var(--bg-card);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-xl);
       width: 100%;
-      max-width: 460px;
-      padding: 36px 32px;
+      max-width: 440px;
+      padding: 32px 28px;
       box-shadow: var(--shadow-lg);
+      box-sizing: border-box;
     }
     .auth-header {
       text-align: center;
-      margin-bottom: 28px;
+      margin-bottom: 24px;
     }
     .auth-brand {
       display: inline-flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
   </style>
 </head>
@@ -56,18 +59,18 @@
           <div class="brand-icon">
             <i class="fa-solid fa-coins"></i>
           </div>
-          <div class="brand-text" style="font-size:1.6rem;">Mone<span>Trac</span></div>
+          <div class="brand-text" style="font-size:1.5rem;">Mone<span>Trac</span></div>
         </div>
-        <p style="color:var(--text-muted);font-size:0.9rem;" id="auth-subtitle">Kelola keuangan pribadi & target tabungan dengan mudah</p>
+        <p style="color:var(--text-muted);font-size:0.85rem;" id="auth-subtitle">Aplikasi Pengelola Keuangan Pribadi & Target Tabungan</p>
       </div>
 
       <!-- Auth Mode Switcher -->
-      <div class="type-tabs" style="margin-bottom:24px;">
+      <div class="type-tabs" style="margin-bottom:20px;">
         <button type="button" class="type-tab-btn active" id="tab-login" onclick="switchAuthTab('login')">
           <i class="fa-solid fa-right-to-bracket"></i> Masuk
         </button>
         <button type="button" class="type-tab-btn" id="tab-register" onclick="switchAuthTab('register')">
-          <i class="fa-solid fa-user-plus"></i> Daftar
+          <i class="fa-solid fa-user-plus"></i> Daftar Akun
         </button>
       </div>
 
@@ -75,53 +78,36 @@
       <form id="auth-form">
         <div class="form-group" id="group-fullname" style="display:none;">
           <label class="form-label" for="auth-fullname">Nama Lengkap</label>
-          <input type="text" id="auth-fullname" class="form-control" placeholder="Contoh: Adam Cahyo">
+          <input type="text" id="auth-fullname" class="form-control" placeholder="Nama Anda">
         </div>
 
         <div class="form-group">
           <label class="form-label" for="auth-email">Email</label>
-          <input type="email" id="auth-email" class="form-control" placeholder="nama@email.com" required>
+          <input type="email" id="auth-email" class="form-control" placeholder="nama@email.com" required autocomplete="email">
         </div>
 
         <div class="form-group">
-          <label class="form-label" for="auth-password">Password</label>
-          <div style="position:relative;">
-            <input type="password" id="auth-password" class="form-control" placeholder="••••••••" required minlength="6" style="padding-right:42px;">
-            <button type="button" onclick="togglePasswordVisibility()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <label class="form-label" for="auth-password">Password</label>
+            <a href="javascript:void(0)" onclick="handleForgotPassword()" id="link-forgot-pwd" style="font-size:0.78rem;color:var(--primary);">Lupa password?</a>
+          </div>
+          <div style="position:relative;margin-top:2px;">
+            <input type="password" id="auth-password" class="form-control" placeholder="Minimal 6 karakter" required minlength="6" autocomplete="current-password" style="padding-right:40px;">
+            <button type="button" onclick="togglePasswordVisibility()" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text-muted);cursor:pointer;padding:4px;">
               <i class="fa-solid fa-eye" id="pwd-icon"></i>
             </button>
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary btn-block btn-lg" id="btn-auth-submit" style="margin-top:12px;">
+        <button type="submit" class="btn btn-primary btn-block btn-lg" id="btn-auth-submit" style="margin-top:14px;">
           <i class="fa-solid fa-right-to-bracket"></i> Masuk ke Akun
-        </button>
-
-        <button type="button" class="btn btn-secondary btn-block" onclick="enterDemoMode()" style="margin-top:10px;">
-          <i class="fa-solid fa-wand-magic-sparkles"></i> Masuk Mode Demo / Offline
         </button>
       </form>
 
-      <!-- Supabase Quick Configuration Toggle -->
-      <div style="margin-top:24px;padding-top:18px;border-top:1px solid var(--border-color);text-align:center;">
-        <a href="javascript:void(0)" onclick="toggleConfigBox()" style="font-size:0.82rem;color:var(--text-muted);">
-          <i class="fa-solid fa-gear"></i> Konfigurasi Supabase URL & Key
-        </a>
-      </div>
-
-      <div id="quick-config-box" style="display:none;margin-top:16px;background:var(--bg-hover);padding:16px;border-radius:var(--radius-md);border:1px solid var(--border-color);">
-        <div style="font-size:0.85rem;font-weight:700;margin-bottom:8px;color:var(--text-primary);">Pengaturan Supabase</div>
-        <div class="form-group" style="margin-bottom:10px;">
-          <label class="form-label" style="font-size:0.75rem;">Supabase URL</label>
-          <input type="text" id="quick-url" class="form-control" placeholder="https://xyz.supabase.co" style="font-size:0.82rem;padding:8px 12px;">
-        </div>
-        <div class="form-group" style="margin-bottom:12px;">
-          <label class="form-label" style="font-size:0.75rem;">Supabase Anon Key</label>
-          <input type="password" id="quick-key" class="form-control" placeholder="eyJhbGciOi..." style="font-size:0.82rem;padding:8px 12px;">
-        </div>
-        <button type="button" class="btn btn-primary btn-sm btn-block" onclick="saveQuickConfig()">
-          Simpan Konfigurasi
-        </button>
+      <div style="margin-top:20px;text-align:center;">
+        <span style="font-size:0.78rem;color:var(--text-muted);display:flex;align-items:center;justify-content:center;gap:6px;">
+          <i class="fa-solid fa-shield-halved" style="color:var(--success);"></i> Data & Akun Terenkripsi Aman dengan RLS
+        </span>
       </div>
     </div>
   </div>
@@ -135,8 +121,6 @@
 
     document.addEventListener("DOMContentLoaded", async () => {
       await Auth.redirectIfAuthenticated();
-      document.getElementById("quick-url").value = SupabaseConfig.getUrl();
-      document.getElementById("quick-key").value = SupabaseConfig.getAnonKey();
     });
 
     function switchAuthTab(mode) {
@@ -144,7 +128,8 @@
       document.getElementById("tab-login").classList.toggle("active", mode === "login");
       document.getElementById("tab-register").classList.toggle("active", mode === "register");
       document.getElementById("group-fullname").style.display = mode === "register" ? "flex" : "none";
-      document.getElementById("auth-subtitle").textContent = mode === "register" ? "Buat akun baru untuk mulai mencatat keuangan" : "Kelola keuangan pribadi & target tabungan dengan mudah";
+      document.getElementById("link-forgot-pwd").style.display = mode === "register" ? "none" : "block";
+      document.getElementById("auth-subtitle").textContent = mode === "register" ? "Buat akun baru untuk mulai mencatat keuangan pribadi" : "Aplikasi Pengelola Keuangan Pribadi & Target Tabungan";
       document.getElementById("btn-auth-submit").innerHTML = mode === "register" ? '<i class="fa-solid fa-user-plus"></i> Daftar Akun Baru' : '<i class="fa-solid fa-right-to-bracket"></i> Masuk ke Akun';
     }
 
@@ -160,28 +145,16 @@
       }
     }
 
-    function toggleConfigBox() {
-      const box = document.getElementById("quick-config-box");
-      box.style.display = box.style.display === "none" ? "block" : "none";
-    }
-
-    function saveQuickConfig() {
-      const url = document.getElementById("quick-url").value;
-      const key = document.getElementById("quick-key").value;
-      SupabaseConfig.saveCredentials(url, key);
-      Utils.showToast("Kredensial Supabase berhasil disimpan!", "success");
-      toggleConfigBox();
-    }
-
-    async function enterDemoMode() {
-      const mockUser = {
-        id: "demo_user_local",
-        email: "demo@monetrac.app",
-        user_metadata: { full_name: "Demo User" }
-      };
-      localStorage.setItem("monetrac_local_user", JSON.stringify(mockUser));
-      Utils.showToast("Masuk sebagai mode demo offline", "info");
-      setTimeout(() => window.location.href = "index.html", 500);
+    async function handleForgotPassword() {
+      const email = prompt("Masukkan email akun Anda untuk menerima instruksi reset password:");
+      if (email && email.trim()) {
+        const res = await Auth.resetPassword(email.trim());
+        if (res.success) {
+          Utils.showToast(res.message, "success");
+        } else {
+          Utils.showToast("Gagal: " + res.error, "error");
+        }
+      }
     }
 
     document.getElementById("auth-form").addEventListener("submit", async (e) => {
@@ -205,7 +178,7 @@
       btn.innerHTML = currentMode === "register" ? '<i class="fa-solid fa-user-plus"></i> Daftar Akun Baru' : '<i class="fa-solid fa-right-to-bracket"></i> Masuk ke Akun';
 
       if (res.success) {
-        Utils.showToast(currentMode === "register" ? "Pendaftaran berhasil!" : "Berhasil masuk!", "success");
+        Utils.showToast(currentMode === "register" ? "Pendaftaran berhasil! Mengalihkan..." : "Berhasil masuk!", "success");
         setTimeout(() => window.location.href = "index.html", 600);
       } else {
         Utils.showToast(res.error || "Gagal melakukan autentikasi", "error");

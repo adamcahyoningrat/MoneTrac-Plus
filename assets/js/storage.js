@@ -19,8 +19,22 @@ const Storage = {
           .order("created_at", { ascending: true });
 
         if (!error && data) {
-          localStorage.setItem("monetrac_cache_accounts", JSON.stringify(data));
-          return data;
+          if (data.length > 0) {
+            localStorage.setItem("monetrac_cache_accounts", JSON.stringify(data));
+            return data;
+          } else {
+            // Auto seed default accounts for user in Supabase
+            const defaultAccounts = [
+              { user_id: user.id, name: "Cash / Tunai", type: "Cash", balance: 0, color: "#16a34a", icon: "money-bill" },
+              { user_id: user.id, name: "Rekening Bank", type: "Bank", balance: 0, color: "#1f16a2", icon: "building-columns" },
+              { user_id: user.id, name: "E-Wallet", type: "E-Wallet", balance: 0, color: "#1b93d0", icon: "wallet" }
+            ];
+            const { data: inserted, error: insertErr } = await client.from("accounts").insert(defaultAccounts).select();
+            if (!insertErr && inserted && inserted.length > 0) {
+              localStorage.setItem("monetrac_cache_accounts", JSON.stringify(inserted));
+              return inserted;
+            }
+          }
         }
       } catch (e) {
         console.warn("Supabase getAccounts error:", e);
@@ -29,11 +43,17 @@ const Storage = {
 
     // LocalStorage fallback
     const cached = localStorage.getItem("monetrac_cache_accounts");
-    return cached ? JSON.parse(cached) : [
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+    const defaultLocalAccounts = [
       { id: "acc_1", name: "Cash / Tunai", type: "Cash", balance: 0, color: "#16a34a", icon: "money-bill" },
       { id: "acc_2", name: "Rekening Bank", type: "Bank", balance: 0, color: "#1f16a2", icon: "building-columns" },
       { id: "acc_3", name: "E-Wallet", type: "E-Wallet", balance: 0, color: "#1b93d0", icon: "wallet" }
     ];
+    localStorage.setItem("monetrac_cache_accounts", JSON.stringify(defaultLocalAccounts));
+    return defaultLocalAccounts;
   },
 
   async saveAccount(account) {
@@ -99,12 +119,14 @@ const Storage = {
 
     if (client && user) {
       try {
-        const { error } = await client
-          .from("accounts")
-          .delete()
-          .eq("id", accountId)
-          .eq("user_id", user.id);
-        if (error) throw error;
+        if (!accountId.startsWith("acc_")) {
+          const { error } = await client
+            .from("accounts")
+            .delete()
+            .eq("id", accountId)
+            .eq("user_id", user.id);
+          if (error) throw error;
+        }
         await this.getAccounts();
         return { success: true };
       } catch (e) {
@@ -142,8 +164,29 @@ const Storage = {
           .order("created_at", { ascending: true });
 
         if (!error && data) {
-          localStorage.setItem("monetrac_cache_categories", JSON.stringify(data));
-          return data;
+          if (data.length > 0) {
+            localStorage.setItem("monetrac_cache_categories", JSON.stringify(data));
+            return data;
+          } else {
+            // Auto seed default categories for user in Supabase
+            const defaultCats = [
+              { user_id: user.id, name: "Salary / Gaji", type: "Income", color: "#2563eb", icon: "briefcase" },
+              { user_id: user.id, name: "Freelance Fee", type: "Income", color: "#24e7eb", icon: "laptop" },
+              { user_id: user.id, name: "Investasi & Bunga", type: "Income", color: "#10b981", icon: "chart-line" },
+              { user_id: user.id, name: "Other Revenue", type: "Income", color: "#69eb24", icon: "gift" },
+              { user_id: user.id, name: "Food & Beverage", type: "Expense", color: "#ef4444", icon: "utensils" },
+              { user_id: user.id, name: "Transportation Exp", type: "Expense", color: "#eb24a2", icon: "car" },
+              { user_id: user.id, name: "Internet & Kuota", type: "Expense", color: "#f59e0b", icon: "wifi" },
+              { user_id: user.id, name: "Electricity / Listrik", type: "Expense", color: "#ebc924", icon: "bolt" },
+              { user_id: user.id, name: "Shopping & Olshop", type: "Expense", color: "#8b5cf6", icon: "cart-shopping" },
+              { user_id: user.id, name: "Other Exp", type: "Expense", color: "#eb5f24", icon: "boxes-stacked" }
+            ];
+            const { data: inserted, error: insertErr } = await client.from("categories").insert(defaultCats).select();
+            if (!insertErr && inserted && inserted.length > 0) {
+              localStorage.setItem("monetrac_cache_categories", JSON.stringify(inserted));
+              return inserted;
+            }
+          }
         }
       } catch (e) {
         console.warn("Supabase getCategories error:", e);
@@ -151,7 +194,11 @@ const Storage = {
     }
 
     const cached = localStorage.getItem("monetrac_cache_categories");
-    return cached ? JSON.parse(cached) : [
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+    const defaultLocalCats = [
       { id: "cat_1", name: "Salary / Gaji", type: "Income", color: "#2563eb", icon: "briefcase" },
       { id: "cat_2", name: "Freelance Fee", type: "Income", color: "#24e7eb", icon: "laptop" },
       { id: "cat_3", name: "Other Revenue", type: "Income", color: "#69eb24", icon: "gift" },
@@ -161,6 +208,8 @@ const Storage = {
       { id: "cat_7", name: "Electricity / Listrik", type: "Expense", color: "#ebc924", icon: "bolt" },
       { id: "cat_8", name: "Other Exp", type: "Expense", color: "#eb5f24", icon: "boxes-stacked" }
     ];
+    localStorage.setItem("monetrac_cache_categories", JSON.stringify(defaultLocalCats));
+    return defaultLocalCats;
   },
 
   async saveCategory(category) {
@@ -199,10 +248,12 @@ const Storage = {
           return { success: true, data };
         }
       } catch (e) {
+        console.error("Supabase saveCategory error:", e);
         return { success: false, error: e.message };
       }
     }
 
+    // Local fallback
     const categories = await this.getCategories();
     if (category.id) {
       const idx = categories.findIndex(c => c.id === category.id);
@@ -221,12 +272,14 @@ const Storage = {
 
     if (client && user) {
       try {
-        const { error } = await client
-          .from("categories")
-          .delete()
-          .eq("id", categoryId)
-          .eq("user_id", user.id);
-        if (error) throw error;
+        if (!categoryId.startsWith("cat_")) {
+          const { error } = await client
+            .from("categories")
+            .delete()
+            .eq("id", categoryId)
+            .eq("user_id", user.id);
+          if (error) throw error;
+        }
         await this.getCategories();
         return { success: true };
       } catch (e) {
@@ -287,7 +340,6 @@ const Storage = {
       const cached = localStorage.getItem("monetrac_cache_transactions");
       txList = cached ? JSON.parse(cached) : [];
 
-      // Apply client-side filters on cached data
       if (filters.type && filters.type !== "all") {
         txList = txList.filter(t => t.type === filters.type);
       }
@@ -314,7 +366,7 @@ const Storage = {
 
     const amount = Number(transaction.amount) || 0;
     const adminFee = Number(transaction.admin_fee) || 0;
-    const type = transaction.type; // 'Expense', 'Income', 'Transfer'
+    const type = transaction.type;
     const accountId = transaction.account_id || transaction.account;
     const toAccountId = transaction.to_account_id || transaction.toAccount;
 
@@ -332,7 +384,7 @@ const Storage = {
       timestamp: transaction.timestamp || new Date().toISOString()
     };
 
-    // 1. Balance update logic
+    // 1. Update balances
     if (type === "Expense") {
       if (accountId) await this.updateAccountBalance(accountId, -amount);
     } else if (type === "Income") {
@@ -342,7 +394,7 @@ const Storage = {
       if (toAccountId) await this.updateAccountBalance(toAccountId, amount);
     }
 
-    // 2. Persist transaction
+    // 2. Persist
     if (client && user) {
       try {
         txData.user_id = user.id;
@@ -393,7 +445,6 @@ const Storage = {
       const accountId = tx.account_id || tx.account;
       const toAccountId = tx.to_account_id || tx.toAccount;
 
-      // Revert account balances
       if (tx.type === "Expense") {
         if (accountId) await this.updateAccountBalance(accountId, amount);
       } else if (tx.type === "Income") {
@@ -427,7 +478,7 @@ const Storage = {
   },
 
   // --------------------------------------------------------------------------
-  // SAVINGS GOALS (FITUR TARGET TABUNGAN)
+  // SAVINGS GOALS
   // --------------------------------------------------------------------------
   async getSavingsGoals() {
     const client = SupabaseConfig.getClient();
@@ -461,17 +512,6 @@ const Storage = {
         color: "#3b82f6",
         icon: "shield-halved",
         notes: "Target 3-6 bulan pengeluaran untuk jaga-jaga.",
-        status: "in_progress"
-      },
-      {
-        id: "goal_2",
-        name: "Beli Laptop Baru",
-        target_amount: 15000000,
-        current_amount: 6000000,
-        target_date: "2026-10-30",
-        color: "#10b981",
-        icon: "laptop",
-        notes: "Untuk menunjang skripsi dan riset finansial.",
         status: "in_progress"
       }
     ];
@@ -540,12 +580,14 @@ const Storage = {
 
     if (client && user) {
       try {
-        const { error } = await client
-          .from("savings_goals")
-          .delete()
-          .eq("id", goalId)
-          .eq("user_id", user.id);
-        if (error) throw error;
+        if (!goalId.startsWith("goal_")) {
+          const { error } = await client
+            .from("savings_goals")
+            .delete()
+            .eq("id", goalId)
+            .eq("user_id", user.id);
+          if (error) throw error;
+        }
         await this.getSavingsGoals();
         return { success: true };
       } catch (e) {
@@ -570,7 +612,6 @@ const Storage = {
 
     if (type === "deposit") {
       newGoalAmount += amt;
-      // Deduct from linked account if provided
       if (accountId) {
         await this.updateAccountBalance(accountId, -amt);
       }
@@ -579,22 +620,19 @@ const Storage = {
         return { success: false, error: "Saldo tabungan tidak mencukupi untuk ditarik" };
       }
       newGoalAmount -= amt;
-      // Add back to account
       if (accountId) {
         await this.updateAccountBalance(accountId, amt);
       }
     }
 
-    // Update goal
     await this.saveSavingsGoal({
       ...goal,
       current_amount: newGoalAmount,
       status: newGoalAmount >= goal.target_amount ? "completed" : "in_progress"
     });
 
-    // Also record transaction in transactions table so user cashflow is tracked
     await this.saveTransaction({
-      type: type === "deposit" ? "Transfer" : "Transfer",
+      type: "Transfer",
       date: date || new Date().toISOString().split("T")[0],
       amount: amt,
       account_id: type === "deposit" ? accountId : null,
@@ -695,12 +733,14 @@ const Storage = {
 
     if (client && user) {
       try {
-        const { error } = await client
-          .from("budgets")
-          .delete()
-          .eq("id", budgetId)
-          .eq("user_id", user.id);
-        if (error) throw error;
+        if (!budgetId.startsWith("b_")) {
+          const { error } = await client
+            .from("budgets")
+            .delete()
+            .eq("id", budgetId)
+            .eq("user_id", user.id);
+          if (error) throw error;
+        }
         await this.getBudgets();
         return { success: true };
       } catch (e) {
@@ -714,7 +754,7 @@ const Storage = {
   },
 
   // --------------------------------------------------------------------------
-  // DATA MIGRATION FROM GSHEET JSON
+  // MIGRATION & BACKUP
   // --------------------------------------------------------------------------
   async importFromGSheetData(rawJson) {
     try {
@@ -739,7 +779,7 @@ const Storage = {
       }
 
       // 2. Import Accounts
-      const accountMap = {}; // old ID -> new ID
+      const accountMap = {};
       if (data.myfinance_accounts && Array.isArray(data.myfinance_accounts)) {
         for (const acc of data.myfinance_accounts) {
           const res = await this.saveAccount({
@@ -767,7 +807,7 @@ const Storage = {
         }
       }
 
-      // 4. Import Transactions (without double modifying account balances)
+      // 4. Import Transactions
       if (data.myfinance_transactions && Array.isArray(data.myfinance_transactions)) {
         const client = SupabaseConfig.getClient();
         const user = await Auth.getCurrentUser();

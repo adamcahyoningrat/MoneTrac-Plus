@@ -115,6 +115,57 @@ const Auth = {
     }
   },
 
+  async updateProfile({ fullName, email, password }) {
+    const client = SupabaseConfig.getClient();
+    const user = await this.getCurrentUser();
+    if (!user) return { success: false, error: "Tidak ada sesi pengguna aktif." };
+
+    if (!client) {
+      // Local fallback update
+      const localUser = JSON.parse(localStorage.getItem("monetrac_local_user") || "{}");
+      if (fullName) {
+        localUser.user_metadata = localUser.user_metadata || {};
+        localUser.user_metadata.full_name = fullName;
+      }
+      if (email) localUser.email = email;
+      localStorage.setItem("monetrac_local_user", JSON.stringify(localUser));
+      return { success: true, message: "Profil lokal berhasil diperbarui." };
+    }
+
+    try {
+      const updatePayload = {};
+      if (fullName) {
+        updatePayload.data = { full_name: fullName };
+      }
+      if (email && email !== user.email) {
+        updatePayload.email = email;
+      }
+      if (password && password.trim().length >= 6) {
+        updatePayload.password = password.trim();
+      }
+
+      // 1. Update Supabase Auth User
+      const { data, error } = await client.auth.updateUser(updatePayload);
+      if (error) throw error;
+
+      // 2. Update public.profiles table
+      if (fullName || email) {
+        await client
+          .from("profiles")
+          .upsert({
+            id: user.id,
+            full_name: fullName,
+            email: email || user.email,
+            updated_at: new Date().toISOString()
+          });
+      }
+
+      return { success: true, message: "Profil berhasil diperbarui!" };
+    } catch (e) {
+      return { success: false, error: e.message };
+    }
+  },
+
   async requireAuth() {
     const user = await this.getCurrentUser();
     if (!user) {

@@ -44,6 +44,42 @@ async function renderSettings() {
   }
 }
 
+async function saveUserProfile(e) {
+  if (e) e.preventDefault();
+  const name = document.getElementById("settings-user-name").value.trim();
+  const email = document.getElementById("settings-user-email").value.trim();
+  const password = document.getElementById("settings-new-password")?.value || "";
+
+  if (!name) {
+    Utils.showToast("Nama lengkap tidak boleh kosong!", "warning");
+    return;
+  }
+
+  const btn = document.getElementById("btn-save-profile");
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...`;
+  }
+
+  const res = await Auth.updateProfile({ fullName: name, email, password });
+
+  if (btn) {
+    btn.disabled = false;
+    btn.innerHTML = `<i class="fa-solid fa-floppy-disk"></i> Simpan Profil`;
+  }
+
+  if (res.success) {
+    Utils.showToast(res.message, "success");
+    if (document.getElementById("settings-new-password")) {
+      document.getElementById("settings-new-password").value = "";
+    }
+    Navbar.updateUserInfo();
+    Sidebar.updateUserCard();
+  } else {
+    Utils.showToast("Gagal memperbarui profil: " + res.error, "error");
+  }
+}
+
 async function saveSupabaseConfig() {
   const url = document.getElementById("settings-supabase-url").value;
   const key = document.getElementById("settings-supabase-key").value;

@@ -15,7 +15,6 @@
   <link rel="stylesheet" href="assets/css/responsive.css">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body data-theme="dark">
   <div class="app-layout">
@@ -35,44 +34,28 @@
     <div class="card-header">
       <div class="card-title"><i class="fa-solid fa-user" style="color:var(--primary);"></i> Profil Pengguna</div>
     </div>
-    <div class="form-group">
-      <label class="form-label">Nama Pengguna</label>
-      <input type="text" id="settings-user-name" class="form-control" readonly>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Email Terdaftar</label>
-      <input type="email" id="settings-user-email" class="form-control" readonly>
-    </div>
-    <button class="btn btn-secondary btn-sm" onclick="Auth.logout()">
-      <i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar dari Akun
-    </button>
-  </div>
-
-  <!-- Supabase Cloud Connection Settings -->
-  <div class="card">
-    <div class="card-header">
-      <div class="card-title"><i class="fa-solid fa-database" style="color:var(--success);"></i> Koneksi Supabase</div>
-      <span id="supabase-status-badge" class="badge">Memeriksa...</span>
-    </div>
-    <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;">
-      Data tersimpan secara aman di Supabase PostgreSQL dengan Row Level Security (RLS).
-    </p>
-    <div class="form-group">
-      <label class="form-label">Supabase Project URL</label>
-      <input type="text" id="settings-supabase-url" class="form-control" placeholder="https://xyzcompany.supabase.co">
-    </div>
-    <div class="form-group">
-      <label class="form-label">Supabase Public Anon Key</label>
-      <input type="password" id="settings-supabase-key" class="form-control" placeholder="eyJhbGciOi...">
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn btn-primary btn-sm" onclick="saveSupabaseConfig()">
-        <i class="fa-solid fa-floppy-disk"></i> Simpan
-      </button>
-      <button class="btn btn-secondary btn-sm" onclick="testSupabaseConnection()">
-        <i class="fa-solid fa-plug"></i> Uji Koneksi
-      </button>
-    </div>
+    <form id="profile-form" onsubmit="saveUserProfile(event)">
+      <div class="form-group">
+        <label class="form-label" for="settings-user-name">Nama Lengkap / Tampilan</label>
+        <input type="text" id="settings-user-name" class="form-control" placeholder="Nama Anda" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="settings-user-email">Email Terdaftar</label>
+        <input type="email" id="settings-user-email" class="form-control" placeholder="nama@email.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="settings-new-password">Ganti Password Baru (Opsional)</label>
+        <input type="password" id="settings-new-password" class="form-control" placeholder="Kosongkan jika tidak ingin ganti password" minlength="6">
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+        <button type="submit" class="btn btn-primary btn-sm" id="btn-save-profile">
+          <i class="fa-solid fa-floppy-disk"></i> Simpan Profil
+        </button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="Auth.logout()">
+          <i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar dari Akun
+        </button>
+      </div>
+    </form>
   </div>
 
   <!-- App Preferences Card -->
@@ -85,11 +68,11 @@
       <div style="display:flex;gap:16px;margin-top:4px;">
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
           <input type="radio" name="theme-choice" id="theme-dark" value="dark" onchange="AppState.setTheme('dark')">
-          <span>Mode Gelap</span>
+          <span>Mode Gelap (Dark)</span>
         </label>
         <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
           <input type="radio" name="theme-choice" id="theme-light" value="light" onchange="AppState.setTheme('light')">
-          <span>Mode Terang</span>
+          <span>Mode Terang (Light)</span>
         </label>
       </div>
     </div>
@@ -98,28 +81,33 @@
       <label class="form-label">Mode Privasi Saldo</label>
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:4px;">
         <input type="checkbox" id="settings-privacy-default" onchange="AppState.setPrivacyMode(this.checked)">
-        <span>Samarkan semua nominal saldo</span>
+        <span>Samarkan semua nominal angka saldo saat membuka aplikasi</span>
       </label>
+    </div>
+
+    <div style="margin-top:18px;padding-top:14px;border-top:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:0.82rem;color:var(--text-muted);">Status Database:</span>
+      <span id="supabase-status-badge" class="badge badge-income"><i class="fa-solid fa-circle-check"></i> Supabase Terhubung</span>
     </div>
   </div>
 
-  <!-- Data Migration from Old GSheet JSON -->
-  <div class="card">
+  <!-- Data Migration & Backup -->
+  <div class="card" style="grid-column: 1 / -1;">
     <div class="card-header">
-      <div class="card-title"><i class="fa-solid fa-file-import" style="color:var(--warning);"></i> Migrasi Data GSheet Lama</div>
+      <div class="card-title"><i class="fa-solid fa-file-import" style="color:var(--warning);"></i> Migrasi & Backup Data</div>
     </div>
-    <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:10px;">
-      Tempelkan JSON dari database Google Sheet lama untuk dipindahkan ke Supabase.
+    <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:12px;">
+      Punya data JSON dari database Google Sheet MoneTrac lama? Tempelkan teks JSON di bawah ini untuk mengimpor seluruh riwayat akun dan transaksi ke akun Anda saat ini.
     </p>
     <div class="form-group">
-      <textarea id="import-json-input" class="form-control" rows="3" placeholder='{"myfinance_transactions": [...]}'></textarea>
+      <textarea id="import-json-input" class="form-control" rows="3" placeholder='{"myfinance_transactions": [...], "myfinance_accounts": [...]}'></textarea>
     </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn btn-warning btn-sm" onclick="importGSheetJSON()" style="color:#000;">
-        <i class="fa-solid fa-file-import"></i> Mulai Migrasi
+        <i class="fa-solid fa-file-import"></i> Mulai Migrasi ke Akun Ini
       </button>
       <button class="btn btn-secondary btn-sm" onclick="exportFullBackupJSON()">
-        <i class="fa-solid fa-download"></i> Backup JSON
+        <i class="fa-solid fa-download"></i> Download Backup JSON
       </button>
     </div>
   </div>
@@ -142,13 +130,9 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
-      await AppState.init("settings", "Pengaturan", "Koneksi database Supabase, migrasi data, dan preferensi akun");
-      if (typeof settingsInit === "function") {
-        settingsInit();
-      } else if (typeof renderPengaturan === "function") {
-        renderPengaturan();
-      } else if (typeof renderDashboard === "function") {
-        renderDashboard();
+      await AppState.init("settings", "Pengaturan", "Profil pengguna, preferensi aplikasi, dan migrasi data");
+      if (typeof renderSettings === "function") {
+        renderSettings();
       }
     });
   </script>
