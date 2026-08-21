@@ -82,7 +82,8 @@ monetrac/
 ├── auth.html                    # Halaman Masuk / Daftar Akun
 ├── budget.html                  # Halaman Anggaran (Budget)
 ├── categories.html              # Halaman Kategori
-├── index.html                   # Halaman Utama (Dashboard Finansial)
+├── index.html                   # Halaman Depan / Landing Page Utama
+├── dashboard.html               # Halaman Dashboard Finansial
 ├── kpi.html                     # Halaman KPI & Skor Kesehatan Keuangan
 ├── reports.html                 # Halaman Laporan & Cetak
 ├── savings.html                 # Halaman Target Tabungan (Celengan Impian)

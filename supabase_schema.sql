@@ -24,7 +24,7 @@ CREATE TABLE public.profiles (
     full_name TEXT,
     avatar_url TEXT,
     currency TEXT DEFAULT 'IDR',
-    theme TEXT DEFAULT 'dark',
+    theme TEXT DEFAULT 'light',
     privacy_mode BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
@@ -176,7 +176,7 @@ BEGIN
         NEW.email,
         COALESCE(NEW.raw_user_meta_data->>'full_name', split_part(NEW.email, '@', 1)),
         'IDR',
-        'dark',
+        'light',
         FALSE
     );
 

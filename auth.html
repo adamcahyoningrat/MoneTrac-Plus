@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id" data-theme="dark">
+<html lang="id" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -25,9 +25,7 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
-      background: radial-gradient(circle at top right, rgba(99, 102, 241, 0.15), transparent 45%),
-                  radial-gradient(circle at bottom left, rgba(59, 130, 246, 0.1), transparent 45%),
-                  var(--bg-body);
+      background: radial-gradient(circle at top right, rgba(6, 182, 212, 0.15), transparent 45%), radial-gradient(circle at bottom left, rgba(14, 165, 233, 0.1), transparent 45%), var(--bg-body);
       width: 100%;
       box-sizing: border-box;
     }
@@ -53,13 +51,14 @@
     }
   </style>
 </head>
-<body data-theme="dark">
+<body data-theme="light">
   <div class="auth-wrapper">
     <div class="auth-card">
+      <div style="margin-bottom:14px;"><a href="index.html" style="font-size:0.82rem;color:var(--text-muted);display:inline-flex;align-items:center;gap:6px;"><i class="fa-solid fa-arrow-left"></i> Kembali ke Beranda</a></div>
       <div class="auth-header">
         <div class="auth-brand">
           <img src="assets/img/logo-icon.svg" alt="MoneTrac+ Logo" class="brand-logo-img" style="width:48px;height:48px;border-radius:14px;">
-          <div class="brand-text" style="font-size:1.6rem;">Mone<span>Trac</span><span class="brand-plus-badge" style="font-size:0.9rem;padding:2px 8px;">+</span></div>
+          <div class="brand-text" style="font-size:1.8rem;font-weight:900;">Mone<span class="brand-accent" style="background:linear-gradient(135deg, #22d3ee 0%, #06b6d4 50%, #0ea5e9 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Trac</span><span class="brand-plus" style="background:linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:1.3em;margin-left:2px;font-weight:900;">+</span></div>
         </div>
         <p style="color:var(--text-muted);font-size:0.85rem;" id="auth-subtitle">Aplikasi Pengelola Keuangan Pribadi & Target Tabungan</p>
       </div>
@@ -179,7 +178,7 @@
 
       if (res.success) {
         Utils.showToast(currentMode === "register" ? "Pendaftaran berhasil! Mengalihkan..." : "Berhasil masuk!", "success");
-        setTimeout(() => window.location.href = "index.html", 600);
+        setTimeout(() => window.location.href = "dashboard.html", 600);
       } else {
         Utils.showToast(res.error || "Gagal melakukan autentikasi", "error");
       }

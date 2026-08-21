@@ -9,8 +9,8 @@
 
 const SupabaseConfig = {
   // GANTI DENGAN KREDENSIAL SUPABASE ANDA:
-  SUPABASE_URL: " https://ukxrswxxgzmrxgrlwjjb.supabase.co", 
-  SUPABASE_ANON_KEY: " sb_publishable_r2SVnuoWLbHLLaglp2iMnw_R0cgm6RG",
+  SUPABASE_URL: "https://your-project-id.supabase.co", 
+  SUPABASE_ANON_KEY: "your-anon-key-here",
 
   getUrl() {
     // Utamakan URL terpusat, jika masih default cek apakah disimpan di localStorage

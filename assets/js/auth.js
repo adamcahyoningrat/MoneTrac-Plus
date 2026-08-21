@@ -178,7 +178,7 @@ const Auth = {
   async redirectIfAuthenticated() {
     const user = await this.getCurrentUser();
     if (user) {
-      window.location.href = "index.html";
+      window.location.href = "dashboard.html";
     }
   }
 };

@@ -4,7 +4,7 @@
 
 const AppState = {
   getTheme() {
-    return localStorage.getItem("monetrac_theme") || "dark";
+    return localStorage.getItem("monetrac_theme") || "light";
   },
 
   setTheme(theme) {

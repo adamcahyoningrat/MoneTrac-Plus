@@ -8,7 +8,7 @@ const Sidebar = {
     if (!container) return;
 
     const navItems = [
-      { id: "dashboard", href: "index.html", icon: "fa-chart-pie", label: "Dashboard" },
+      { id: "dashboard", href: "dashboard.html", icon: "fa-chart-pie", label: "Dashboard" },
       { id: "transactions", href: "transactions.html", icon: "fa-receipt", label: "Transaksi" },
       { id: "accounts", href: "accounts.html", icon: "fa-building-columns", label: "Akun & Dompet" },
       { id: "savings", href: "savings.html", icon: "fa-piggy-bank", label: "Target Tabungan", badge: "Baru" },
@@ -24,7 +24,7 @@ const Sidebar = {
       <aside class="sidebar-wrapper">
         <div class="sidebar-brand">
           <img src="assets/img/logo-icon.svg" alt="MoneTrac+ Logo" class="brand-logo-img">
-          <div class="brand-text">Mone<span>Trac</span><span class="brand-plus-badge">+</span></div>
+          <div class="brand-text">Mone<span class="brand-accent">Trac</span><span class="brand-plus">+</span></div>
           <button class="modal-close d-mobile-only" id="mobile-sidebar-close" style="margin-left:auto;font-size:1.4rem;">&times;</button>
         </div>
 
@@ -58,7 +58,7 @@ const Sidebar = {
 
       <!-- Mobile Bottom App Bar -->
       <div class="mobile-bottom-nav">
-        <a href="index.html" class="mobile-nav-item ${activePage === 'dashboard' ? 'active' : ''}">
+        <a href="dashboard.html" class="mobile-nav-item ${activePage === 'dashboard' ? 'active' : ''}">
           <i class="fa-solid fa-chart-pie"></i>
           <span>Dashboard</span>
         </a>
