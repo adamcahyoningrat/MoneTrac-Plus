@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Kategori - MoneTrac</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body data-theme="dark">
+  <div class="app-layout">
+    <!-- Dynamic Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <div class="main-content">
+      <!-- Dynamic Navbar -->
+      <div id="navbar-container"></div>
+
+      <!-- Main Page Content -->
+      <main class="content-wrapper">
+        
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+  <div>
+    <h2 style="font-size:1.2rem;font-weight:700;color:var(--text-primary);">Kelola Kategori Keuangan</h2>
+    <p style="font-size:0.85rem;color:var(--text-muted);">Kelompokkan transaksi pemasukan dan pengeluaran</p>
+  </div>
+
+  <button class="btn btn-primary btn-sm" onclick="openCategoryModal()">
+    <i class="fa-solid fa-plus"></i> Tambah Kategori Baru
+  </button>
+</div>
+
+<div class="two-col-grid">
+  <!-- Expense Categories -->
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h3 style="font-size:1.05rem;font-weight:700;color:var(--danger);display:flex;align-items:center;gap:8px;">
+        <i class="fa-solid fa-circle-arrow-down"></i> Pengeluaran (Expense)
+      </h3>
+      <span class="badge badge-expense" id="cat-expense-count">0 Kategori</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="categories-expense-grid">
+      <!-- Expense Category Cards -->
+    </div>
+  </div>
+
+  <!-- Income Categories -->
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+      <h3 style="font-size:1.05rem;font-weight:700;color:var(--success);display:flex;align-items:center;gap:8px;">
+        <i class="fa-solid fa-circle-arrow-up"></i> Pemasukan (Income)
+      </h3>
+      <span class="badge badge-income" id="cat-income-count">0 Kategori</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;" id="categories-income-grid">
+      <!-- Income Category Cards -->
+    </div>
+  </div>
+</div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Universal Scripts -->
+  <script src="assets/js/supabase-config.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/utils.js"></script>
+  <script src="assets/js/storage.js"></script>
+  <script src="assets/components/navbar.js"></script>
+  <script src="assets/components/sidebar.js"></script>
+  <script src="assets/components/modal.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/categories.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      await AppState.init("categories", "Kategori", "Atur kategori pemasukan & pengeluaran transaksi");
+      if (typeof categoriesInit === "function") {
+        categoriesInit();
+      } else if (typeof renderKategori === "function") {
+        renderKategori();
+      } else if (typeof renderDashboard === "function") {
+        renderDashboard();
+      }
+    });
+  </script>
+</body>
+</html>

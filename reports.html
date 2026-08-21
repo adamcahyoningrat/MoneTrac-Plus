@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laporan & Cetak - MoneTrac</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body data-theme="dark">
+  <div class="app-layout">
+    <!-- Dynamic Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <div class="main-content">
+      <!-- Dynamic Navbar -->
+      <div id="navbar-container"></div>
+
+      <!-- Main Page Content -->
+      <main class="content-wrapper">
+        
+<!-- Filter & Actions Bar -->
+<div class="card no-print" style="margin-bottom:24px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;">
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;">
+      <div class="form-group" style="margin:0;min-width:160px;">
+        <label class="form-label">Pilih Bulan</label>
+        <select id="report-month" class="form-control" onchange="renderReports()">
+          <option value="0">Januari</option>
+          <option value="1">Februari</option>
+          <option value="2">Maret</option>
+          <option value="3">April</option>
+          <option value="4">Mei</option>
+          <option value="5">Juni</option>
+          <option value="6">Juli</option>
+          <option value="7">Agustus</option>
+          <option value="8">September</option>
+          <option value="9">Oktober</option>
+          <option value="10">November</option>
+          <option value="11">Desember</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin:0;min-width:140px;">
+        <label class="form-label">Pilih Tahun</label>
+        <select id="report-year" class="form-control" onchange="renderReports()">
+          <option value="2026">2026</option>
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-secondary" onclick="exportReportCSV()">
+        <i class="fa-solid fa-file-csv"></i> Ekspor CSV
+      </button>
+      <button class="btn btn-primary" onclick="printFinancialReport()">
+        <i class="fa-solid fa-print"></i> Cetak / Simpan PDF
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Print Header (Visible only when printing) -->
+<div class="print-header" style="display:none;">
+  <h1 style="font-size:20pt;margin-bottom:4px;">LAPORAN KEUANGAN BULANAN - MONETRAC</h1>
+  <p style="font-size:11pt;color:#555;">Dicetak otomatis melalui Aplikasi Manajemen Keuangan MoneTrac</p>
+</div>
+
+<!-- Summary Metric Cards -->
+<div class="stats-grid">
+  <div class="stat-card" style="--stat-gradient: var(--success-gradient); --stat-color: var(--success); --stat-bg: rgba(16, 185, 129, 0.12);">
+    <div class="stat-card-header">
+      <span class="stat-label">Total Pemasukan</span>
+      <div class="stat-icon"><i class="fa-solid fa-arrow-up"></i></div>
+    </div>
+    <div class="stat-value" id="report-income" style="color:var(--success);">Rp 0</div>
+  </div>
+
+  <div class="stat-card" style="--stat-gradient: var(--danger-gradient); --stat-color: var(--danger); --stat-bg: rgba(239, 68, 68, 0.12);">
+    <div class="stat-card-header">
+      <span class="stat-label">Total Pengeluaran</span>
+      <div class="stat-icon"><i class="fa-solid fa-arrow-down"></i></div>
+    </div>
+    <div class="stat-value" id="report-expense" style="color:var(--danger);">Rp 0</div>
+  </div>
+
+  <div class="stat-card" style="--stat-gradient: var(--primary-gradient); --stat-color: var(--primary); --stat-bg: rgba(59, 130, 246, 0.12);">
+    <div class="stat-card-header">
+      <span class="stat-label">Arus Kas Bersih (Net)</span>
+      <div class="stat-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+    </div>
+    <div class="stat-value" id="report-net">Rp 0</div>
+  </div>
+
+  <div class="stat-card" style="--stat-gradient: var(--accent-gradient); --stat-color: #8b5cf6; --stat-bg: rgba(139, 92, 246, 0.12);">
+    <div class="stat-card-header">
+      <span class="stat-label">Total Transaksi</span>
+      <div class="stat-icon"><i class="fa-solid fa-receipt"></i></div>
+    </div>
+    <div class="stat-value" id="report-tx-count">0 Transaksi</div>
+  </div>
+</div>
+
+<!-- Breakdown By Category Table -->
+<div class="card" style="margin-bottom:24px;">
+  <div class="card-header">
+    <div class="card-title"><i class="fa-solid fa-list-ol" style="color:var(--primary);"></i> Rincian Pengeluaran per Kategori</div>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Kategori</th>
+          <th style="text-align:right;">Total Pengeluaran (Rp)</th>
+          <th style="text-align:right;">Pangsa Biaya (%)</th>
+        </tr>
+      </thead>
+      <tbody id="report-category-tbody">
+        <tr><td colspan="3" style="text-align:center;padding:20px;">Memuat rincian...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Detailed Transactions Table -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><i class="fa-solid fa-receipt" style="color:var(--primary);"></i> Daftar Lengkap Transaksi Periode Ini</div>
+  </div>
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Tanggal</th>
+          <th>Tipe</th>
+          <th>Kategori</th>
+          <th>Keterangan</th>
+          <th style="text-align:right;">Nominal (Rp)</th>
+        </tr>
+      </thead>
+      <tbody id="report-tx-tbody">
+        <tr><td colspan="5" style="text-align:center;padding:20px;">Memuat transaksi...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Universal Scripts -->
+  <script src="assets/js/supabase-config.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/utils.js"></script>
+  <script src="assets/js/storage.js"></script>
+  <script src="assets/components/navbar.js"></script>
+  <script src="assets/components/sidebar.js"></script>
+  <script src="assets/components/modal.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/reports.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      await AppState.init("reports", "Laporan & Cetak", "Rekapitulasi keuangan bulanan, analisis pos biaya, dan cetak PDF");
+      if (typeof reportsInit === "function") {
+        reportsInit();
+      } else if (typeof renderLaporan&Cetak === "function") {
+        renderLaporan&Cetak();
+      } else if (typeof renderDashboard === "function") {
+        renderDashboard();
+      }
+    });
+  </script>
+</body>
+</html>

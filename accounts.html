@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Akun & Dompet - MoneTrac</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body data-theme="dark">
+  <div class="app-layout">
+    <!-- Dynamic Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <div class="main-content">
+      <!-- Dynamic Navbar -->
+      <div id="navbar-container"></div>
+
+      <!-- Main Page Content -->
+      <main class="content-wrapper">
+        
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;margin-bottom:24px;">
+  <div>
+    <div style="font-size:0.85rem;color:var(--text-muted);text-transform:uppercase;font-weight:700;">Total Kekayaan Bersih</div>
+    <div style="font-size:2.2rem;font-weight:800;color:var(--text-primary);" id="accounts-total-networth">Rp 0</div>
+    <div style="font-size:0.85rem;color:var(--text-secondary);" id="accounts-count">0 Akun Terdaftar</div>
+  </div>
+
+  <div style="display:flex;gap:10px;">
+    <button class="btn btn-secondary" onclick="Modal.openTransactionModal({type:'Transfer'})">
+      <i class="fa-solid fa-right-left"></i> Pindah Dana (Transfer)
+    </button>
+    <button class="btn btn-primary" onclick="openAccountModal()">
+      <i class="fa-solid fa-plus"></i> Tambah Akun Baru
+    </button>
+  </div>
+</div>
+
+<div class="goals-grid" id="accounts-grid">
+  <!-- Accounts cards injected here -->
+</div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Universal Scripts -->
+  <script src="assets/js/supabase-config.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/utils.js"></script>
+  <script src="assets/js/storage.js"></script>
+  <script src="assets/components/navbar.js"></script>
+  <script src="assets/components/sidebar.js"></script>
+  <script src="assets/components/modal.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/accounts.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      await AppState.init("accounts", "Akun & Dompet", "Kelola rekening bank, uang tunai, e-wallet, dan kartu");
+      if (typeof accountsInit === "function") {
+        accountsInit();
+      } else if (typeof renderAkun&Dompet === "function") {
+        renderAkun&Dompet();
+      } else if (typeof renderDashboard === "function") {
+        renderDashboard();
+      }
+    });
+  </script>
+</body>
+</html>

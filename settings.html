@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pengaturan - MoneTrac</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body data-theme="dark">
+  <div class="app-layout">
+    <!-- Dynamic Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <div class="main-content">
+      <!-- Dynamic Navbar -->
+      <div id="navbar-container"></div>
+
+      <!-- Main Page Content -->
+      <main class="content-wrapper">
+        
+<div class="two-col-grid">
+  <!-- User Profile Card -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fa-solid fa-user" style="color:var(--primary);"></i> Profil Pengguna</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nama Pengguna</label>
+      <input type="text" id="settings-user-name" class="form-control" readonly>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email Terdaftar</label>
+      <input type="email" id="settings-user-email" class="form-control" readonly>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="Auth.logout()">
+      <i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar dari Akun
+    </button>
+  </div>
+
+  <!-- Supabase Cloud Connection Settings -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fa-solid fa-database" style="color:var(--success);"></i> Koneksi Supabase</div>
+      <span id="supabase-status-badge" class="badge">Memeriksa...</span>
+    </div>
+    <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:12px;">
+      Data tersimpan secara aman di Supabase PostgreSQL dengan Row Level Security (RLS).
+    </p>
+    <div class="form-group">
+      <label class="form-label">Supabase Project URL</label>
+      <input type="text" id="settings-supabase-url" class="form-control" placeholder="https://xyzcompany.supabase.co">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Supabase Public Anon Key</label>
+      <input type="password" id="settings-supabase-key" class="form-control" placeholder="eyJhbGciOi...">
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-primary btn-sm" onclick="saveSupabaseConfig()">
+        <i class="fa-solid fa-floppy-disk"></i> Simpan
+      </button>
+      <button class="btn btn-secondary btn-sm" onclick="testSupabaseConnection()">
+        <i class="fa-solid fa-plug"></i> Uji Koneksi
+      </button>
+    </div>
+  </div>
+
+  <!-- App Preferences Card -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fa-solid fa-sliders" style="color:#8b5cf6;"></i> Preferensi Aplikasi</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tema Tampilan</label>
+      <div style="display:flex;gap:16px;margin-top:4px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="radio" name="theme-choice" id="theme-dark" value="dark" onchange="AppState.setTheme('dark')">
+          <span>Mode Gelap</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="radio" name="theme-choice" id="theme-light" value="light" onchange="AppState.setTheme('light')">
+          <span>Mode Terang</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top:14px;">
+      <label class="form-label">Mode Privasi Saldo</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:4px;">
+        <input type="checkbox" id="settings-privacy-default" onchange="AppState.setPrivacyMode(this.checked)">
+        <span>Samarkan semua nominal saldo</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Data Migration from Old GSheet JSON -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fa-solid fa-file-import" style="color:var(--warning);"></i> Migrasi Data GSheet Lama</div>
+    </div>
+    <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:10px;">
+      Tempelkan JSON dari database Google Sheet lama untuk dipindahkan ke Supabase.
+    </p>
+    <div class="form-group">
+      <textarea id="import-json-input" class="form-control" rows="3" placeholder='{"myfinance_transactions": [...]}'></textarea>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <button class="btn btn-warning btn-sm" onclick="importGSheetJSON()" style="color:#000;">
+        <i class="fa-solid fa-file-import"></i> Mulai Migrasi
+      </button>
+      <button class="btn btn-secondary btn-sm" onclick="exportFullBackupJSON()">
+        <i class="fa-solid fa-download"></i> Backup JSON
+      </button>
+    </div>
+  </div>
+</div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Universal Scripts -->
+  <script src="assets/js/supabase-config.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/utils.js"></script>
+  <script src="assets/js/storage.js"></script>
+  <script src="assets/components/navbar.js"></script>
+  <script src="assets/components/sidebar.js"></script>
+  <script src="assets/components/modal.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/settings.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      await AppState.init("settings", "Pengaturan", "Koneksi database Supabase, migrasi data, dan preferensi akun");
+      if (typeof settingsInit === "function") {
+        settingsInit();
+      } else if (typeof renderPengaturan === "function") {
+        renderPengaturan();
+      } else if (typeof renderDashboard === "function") {
+        renderDashboard();
+      }
+    });
+  </script>
+</body>
+</html>

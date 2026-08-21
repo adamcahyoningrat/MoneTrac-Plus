@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transaksi - MoneTrac</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body data-theme="dark">
+  <div class="app-layout">
+    <!-- Dynamic Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <div class="main-content">
+      <!-- Dynamic Navbar -->
+      <div id="navbar-container"></div>
+
+      <!-- Main Page Content -->
+      <main class="content-wrapper">
+        
+<div class="card" style="margin-bottom:24px;">
+  <!-- Filter Controls -->
+  <div style="display:grid;grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));gap:14px;align-items:flex-end;">
+    <div class="form-group" style="margin:0;">
+      <label class="form-label">Cari Keterangan / Kategori</label>
+      <input type="text" id="search-tx" class="form-control" placeholder="Ketik kata kunci..." oninput="applyFiltersAndRender()">
+    </div>
+
+    <div class="form-group" style="margin:0;">
+      <label class="form-label">Tipe Transaksi</label>
+      <select id="filter-type" class="form-control" onchange="applyFiltersAndRender()">
+        <option value="all">Semua Tipe</option>
+        <option value="Expense">Pengeluaran (Expense)</option>
+        <option value="Income">Pemasukan (Income)</option>
+        <option value="Transfer">Transfer Saldo</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin:0;">
+      <label class="form-label">Filter Akun</label>
+      <select id="filter-account" class="form-control" onchange="applyFiltersAndRender()">
+        <option value="all">Semua Akun</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin:0;">
+      <label class="form-label">Filter Kategori</label>
+      <select id="filter-category" class="form-control" onchange="applyFiltersAndRender()">
+        <option value="all">Semua Kategori</option>
+      </select>
+    </div>
+
+    <div class="form-group" style="margin:0;">
+      <label class="form-label">Mulai Tanggal</label>
+      <input type="date" id="filter-start-date" class="form-control" onchange="applyFiltersAndRender()">
+    </div>
+
+    <div class="form-group" style="margin:0;">
+      <label class="form-label">Sampai Tanggal</label>
+      <input type="date" id="filter-end-date" class="form-control" onchange="applyFiltersAndRender()">
+    </div>
+  </div>
+</div>
+
+<!-- Filter Summary Cards -->
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+  <div style="display:flex;gap:16px;align-items:center;">
+    <span class="badge badge-income" style="font-size:0.85rem;padding:6px 12px;">
+      Pemasukan: <span id="filtered-income" style="margin-left:4px;">Rp 0</span>
+    </span>
+    <span class="badge badge-expense" style="font-size:0.85rem;padding:6px 12px;">
+      Pengeluaran: <span id="filtered-expense" style="margin-left:4px;">Rp 0</span>
+    </span>
+    <span id="filtered-count" style="font-size:0.85rem;color:var(--text-muted);font-weight:600;">0 Transaksi</span>
+  </div>
+
+  <div style="display:flex;gap:10px;">
+    <button class="btn btn-secondary btn-sm" onclick="exportTransactionsCSV()">
+      <i class="fa-solid fa-file-csv"></i> Ekspor CSV
+    </button>
+    <button class="btn btn-primary btn-sm" onclick="Modal.openTransactionModal()">
+      <i class="fa-solid fa-plus"></i> Tambah Transaksi
+    </button>
+  </div>
+</div>
+
+<!-- Transaction Table Card -->
+<div class="card">
+  <div class="table-responsive">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Tanggal</th>
+          <th>Tipe</th>
+          <th>Akun (Asal ➔ Tujuan)</th>
+          <th>Kategori</th>
+          <th>Keterangan</th>
+          <th style="text-align:right;">Nominal (Rp)</th>
+          <th style="text-align:center;width:100px;">Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="tx-tbody">
+        <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--text-muted);">Memuat data transaksi...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination Controls -->
+  <div id="tx-pagination" style="display:flex;justify-content:space-between;align-items:center;padding-top:20px;border-top:1px solid var(--border-color);margin-top:16px;">
+  </div>
+</div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Universal Scripts -->
+  <script src="assets/js/supabase-config.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/utils.js"></script>
+  <script src="assets/js/storage.js"></script>
+  <script src="assets/components/navbar.js"></script>
+  <script src="assets/components/sidebar.js"></script>
+  <script src="assets/components/modal.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/transactions.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      await AppState.init("transactions", "Transaksi", "Kelola riwayat pengeluaran, pemasukan, dan transfer saldo");
+      if (typeof transactionsInit === "function") {
+        transactionsInit();
+      } else if (typeof renderTransaksi === "function") {
+        renderTransaksi();
+      } else if (typeof renderDashboard === "function") {
+        renderDashboard();
+      }
+    });
+  </script>
+</body>
+</html>

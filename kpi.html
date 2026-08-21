@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KPI Keuangan - MoneTrac</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body data-theme="dark">
+  <div class="app-layout">
+    <!-- Dynamic Sidebar -->
+    <div id="sidebar-container"></div>
+
+    <div class="main-content">
+      <!-- Dynamic Navbar -->
+      <div id="navbar-container"></div>
+
+      <!-- Main Page Content -->
+      <main class="content-wrapper">
+        
+<!-- KPI Financial Health Metric Cards -->
+<div class="stats-grid">
+  <div class="stat-card" style="--stat-gradient: var(--accent-gradient); --stat-color: #8b5cf6; --stat-bg: rgba(139, 92, 246, 0.12);">
+    <div class="stat-card-header">
+      <span class="stat-label">Skor Kesehatan Finansial</span>
+      <div class="stat-icon"><i class="fa-solid fa-heart-pulse"></i></div>
+    </div>
+    <div class="stat-value" id="kpi-score" style="color:#8b5cf6;">- / 100</div>
+    <div class="stat-footer">
+      <span style="font-size:0.8rem;color:var(--text-muted);">Dihitung dari rasio tabungan & runway</span>
+    </div>
+  </div>
+
+  <div class="stat-card" style="--stat-gradient: var(--success-gradient); --stat-color: var(--success); --stat-bg: rgba(16, 185, 129, 0.12);">
+    <div class="stat-card-header">
+      <span class="stat-label">Rasio Tabungan (Savings Rate)</span>
+      <div class="stat-icon"><i class="fa-solid fa-piggy-bank"></i></div>
+    </div>
+    <div class="stat-value" id="kpi-savings-rate" style="color:var(--success);">0%</div>
+    <div class="stat-footer">
+      <span style="font-size:0.8rem;color:var(--text-muted);">Rekomendasi: minimal 20%</span>
+    </div>
+  </div>
+
+  <div class="stat-card" style="--stat-gradient: var(--danger-gradient); --stat-color: var(--danger); --stat-bg: rgba(239, 68, 68, 0.12);">
+    <div class="stat-card-header">
+      <span class="stat-label">Rasio Beban Pengeluaran</span>
+      <div class="stat-icon"><i class="fa-solid fa-fire"></i></div>
+    </div>
+    <div class="stat-value" id="kpi-expense-ratio" style="color:var(--danger);">0%</div>
+    <div class="stat-footer">
+      <span style="font-size:0.8rem;color:var(--text-muted);">Persentase biaya dari income</span>
+    </div>
+  </div>
+
+  <div class="stat-card" style="--stat-gradient: var(--primary-gradient); --stat-color: var(--primary); --stat-bg: rgba(59, 130, 246, 0.12);">
+    <div class="stat-card-header">
+      <span class="stat-label">Ketahanan Dana (Runway)</span>
+      <div class="stat-icon"><i class="fa-solid fa-shield"></i></div>
+    </div>
+    <div class="stat-value" id="kpi-runway" style="color:var(--primary);">- Bulan</div>
+    <div class="stat-footer">
+      <span style="font-size:0.8rem;color:var(--text-muted);">Bertahan tanpa penghasilan</span>
+    </div>
+  </div>
+</div>
+
+<!-- Financial Insights & Recommendations -->
+<div class="card" style="margin-top:24px;">
+  <div class="card-header">
+    <div class="card-title"><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--primary);"></i> Analisis & Rekomendasi Finansial Pintar</div>
+  </div>
+  <div id="kpi-advice" style="font-size:1rem;line-height:1.7;color:var(--text-secondary);">
+    Memuat analisis kesehatan keuangan Anda...
+  </div>
+</div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- Universal Scripts -->
+  <script src="assets/js/supabase-config.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/utils.js"></script>
+  <script src="assets/js/storage.js"></script>
+  <script src="assets/components/navbar.js"></script>
+  <script src="assets/components/sidebar.js"></script>
+  <script src="assets/components/modal.js"></script>
+  <script src="assets/js/app.js"></script>
+  <script src="assets/js/kpi.js"></script>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      await AppState.init("kpi", "KPI Keuangan", "Metrik kesehatan finansial, rasio tabungan, dan ketahanan dana");
+      if (typeof kpiInit === "function") {
+        kpiInit();
+      } else if (typeof renderKPIKeuangan === "function") {
+        renderKPIKeuangan();
+      } else if (typeof renderDashboard === "function") {
+        renderDashboard();
+      }
+    });
+  </script>
+</body>
+</html>
