@@ -1,5 +1,5 @@
 /**
- * MONETRAC - SIDEBAR & NAVIGATION COMPONENT
+ * MONETRAC+ - SIDEBAR & NAVIGATION COMPONENT
  */
 
 const Sidebar = {
@@ -23,10 +23,8 @@ const Sidebar = {
       <div class="sidebar-overlay" id="sidebar-overlay"></div>
       <aside class="sidebar-wrapper">
         <div class="sidebar-brand">
-          <div class="brand-icon">
-            <i class="fa-solid fa-coins"></i>
-          </div>
-          <div class="brand-text">Mone<span>Trac</span></div>
+          <img src="assets/img/logo-icon.svg" alt="MoneTrac+ Logo" class="brand-logo-img">
+          <div class="brand-text">Mone<span>Trac</span><span class="brand-plus-badge">+</span></div>
           <button class="modal-close d-mobile-only" id="mobile-sidebar-close" style="margin-left:auto;font-size:1.4rem;">&times;</button>
         </div>
 

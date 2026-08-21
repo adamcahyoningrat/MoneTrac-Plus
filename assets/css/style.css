@@ -1196,3 +1196,30 @@ select.form-control {
   color: var(--text-muted);
   max-width: 360px;
 }
+
+.brand-plus-badge {
+  display: inline-block;
+  background: linear-gradient(135deg, #ec4899 0%, #f43f5e 100%);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 900;
+  padding: 1px 6px;
+  border-radius: 6px;
+  margin-left: 4px;
+  vertical-align: super;
+  box-shadow: 0 2px 8px rgba(236, 72, 153, 0.4);
+  line-height: 1.2;
+}
+
+.brand-logo-img {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+  transition: transform 0.2s ease;
+}
+
+.brand-logo-img:hover {
+  transform: scale(1.05);
+}
