@@ -242,14 +242,14 @@ const Modal = {
     const form = document.getElementById("tx-form");
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
-      const id = document.getElementById("tx-id").value;
-      const amount = Number(document.getElementById("tx-amount").value);
-      const accountId = document.getElementById("tx-account").value;
+      const id = document.getElementById("tx-id")?.value;
+      const amount = Number(document.getElementById("tx-amount")?.value) || 0;
+      const accountId = document.getElementById("tx-account")?.value;
       const toAccountId = document.getElementById("tx-to-account")?.value;
       const adminFee = Number(document.getElementById("tx-admin-fee")?.value) || 0;
       const categoryName = document.getElementById("tx-category")?.value;
-      const date = document.getElementById("tx-date").value;
-      const desc = document.getElementById("tx-desc").value;
+      const date = document.getElementById("tx-date")?.value || new Date().toISOString().split("T")[0];
+      const desc = document.getElementById("tx-desc")?.value || "";
 
       if (this.activeTransactionType === "Transfer" && accountId === toAccountId) {
         Utils.showToast("Akun tujuan tidak boleh sama dengan akun asal transfer!", "error");
@@ -262,34 +262,38 @@ const Modal = {
         submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...`;
       }
 
-      const txPayload = {
-        id: id || undefined,
-        type: this.activeTransactionType,
-        amount: amount,
-        admin_fee: adminFee,
-        account_id: accountId,
-        to_account_id: this.activeTransactionType === "Transfer" ? toAccountId : null,
-        category_name: this.activeTransactionType === "Transfer" ? "Transfer" : categoryName,
-        date: date,
-        description: desc
-      };
+      try {
+        const txPayload = {
+          id: id || undefined,
+          type: this.activeTransactionType,
+          amount: amount,
+          admin_fee: adminFee,
+          account_id: accountId,
+          to_account_id: this.activeTransactionType === "Transfer" ? toAccountId : null,
+          category_name: this.activeTransactionType === "Transfer" ? "Transfer" : categoryName,
+          date: date,
+          description: desc
+        };
 
-      const res = await Storage.saveTransaction(txPayload);
-      Modal.close();
+        const res = await Storage.saveTransaction(txPayload);
+        Modal.close();
 
-      if (res.success) {
-        Utils.showToast("Transaksi berhasil disimpan!", "success");
-        if (typeof renderTransactions === "function") {
-          renderTransactions();
+        if (res.success) {
+          Utils.showToast("Transaksi berhasil disimpan!", "success");
+          if (typeof renderTransactions === "function") renderTransactions();
+          if (typeof renderDashboard === "function") renderDashboard();
+          if (typeof renderAccounts === "function") renderAccounts();
+        } else {
+          Utils.showToast("Gagal menyimpan transaksi: " + (res.error || "Terjadi kesalahan"), "error");
         }
-        if (typeof renderDashboard === "function") {
-          renderDashboard();
+      } catch (err) {
+        console.error("Save transaction error:", err);
+        Utils.showToast("Terjadi galat: " + err.message, "error");
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `<i class="fa-solid fa-check"></i> Simpan Transaksi`;
         }
-        if (typeof renderAccounts === "function") {
-          renderAccounts();
-        }
-      } else {
-        Utils.showToast("Gagal menyimpan transaksi: " + (res.error || "Terjadi kesalahan"), "error");
       }
     });
   },

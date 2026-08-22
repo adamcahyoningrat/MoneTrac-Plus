@@ -120,26 +120,31 @@ function openCategoryModal(catId = null) {
 
   document.getElementById("category-form").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const id = document.getElementById("cat-id").value;
-    const name = document.getElementById("cat-name").value;
-    const type = document.getElementById("cat-type").value;
-    const color = document.getElementById("cat-color").value;
-    const icon = document.getElementById("cat-icon").value;
+    const id = document.getElementById("cat-id")?.value;
+    const name = document.getElementById("cat-name")?.value;
+    const type = document.getElementById("cat-type")?.value;
+    const color = document.getElementById("cat-color")?.value;
+    const icon = document.getElementById("cat-icon")?.value;
 
-    const res = await Storage.saveCategory({
-      id: id || undefined,
-      name,
-      type,
-      color,
-      icon
-    });
+    try {
+      const res = await Storage.saveCategory({
+        id: id || undefined,
+        name,
+        type,
+        color,
+        icon
+      });
 
-    Modal.close();
-    if (res.success) {
-      Utils.showToast("Kategori berhasil disimpan!", "success");
-      renderCategories();
-    } else {
-      Utils.showToast("Gagal menyimpan kategori: " + res.error, "error");
+      Modal.close();
+      if (res.success) {
+        Utils.showToast("Kategori berhasil disimpan!", "success");
+        renderCategories();
+      } else {
+        Utils.showToast("Gagal menyimpan kategori: " + res.error, "error");
+      }
+    } catch (err) {
+      console.error("Save category error:", err);
+      Utils.showToast("Terjadi galat: " + err.message, "error");
     }
   });
 
