@@ -1,22 +1,30 @@
 /**
- * MONETRAC - AUTHENTICATION & MULTI-USER MANAGEMENT
+ * MONETRAC - AUTHENTICATION & MULTI-USER MANAGEMENT (ROCK SOLID)
  */
 
 const Auth = {
   async getCurrentUser() {
     const client = SupabaseConfig.getClient();
     if (!client) {
-      // Local fallback mock user for demo/offline mode
       const localUser = localStorage.getItem("monetrac_local_user");
       return localUser ? JSON.parse(localUser) : null;
     }
     try {
       const { data: { user }, error } = await client.auth.getUser();
-      if (error || !user) return null;
-      return user;
+      if (user) {
+        localStorage.setItem("monetrac_local_user", JSON.stringify({
+          id: user.id,
+          email: user.email,
+          user_metadata: user.user_metadata || {}
+        }));
+        return user;
+      }
+      const localUser = localStorage.getItem("monetrac_local_user");
+      return localUser ? JSON.parse(localUser) : null;
     } catch (e) {
       console.warn("Auth getUser error:", e);
-      return null;
+      const localUser = localStorage.getItem("monetrac_local_user");
+      return localUser ? JSON.parse(localUser) : null;
     }
   },
 
@@ -34,7 +42,6 @@ const Auth = {
   async register(email, password, fullName) {
     const client = SupabaseConfig.getClient();
     if (!client) {
-      // Mock local register
       const mockUser = {
         id: "local_user_" + Date.now(),
         email: email,
@@ -55,6 +62,15 @@ const Auth = {
         }
       });
       if (error) throw error;
+      
+      if (data.user) {
+        localStorage.setItem("monetrac_local_user", JSON.stringify({
+          id: data.user.id,
+          email: data.user.email,
+          user_metadata: { full_name: fullName }
+        }));
+      }
+
       return { success: true, user: data.user, session: data.session };
     } catch (e) {
       return { success: false, error: e.message };
@@ -64,7 +80,6 @@ const Auth = {
   async login(email, password) {
     const client = SupabaseConfig.getClient();
     if (!client) {
-      // Mock local login
       const mockUser = {
         id: "local_user_demo",
         email: email,
@@ -80,6 +95,15 @@ const Auth = {
         password
       });
       if (error) throw error;
+
+      if (data.user) {
+        localStorage.setItem("monetrac_local_user", JSON.stringify({
+          id: data.user.id,
+          email: data.user.email,
+          user_metadata: data.user.user_metadata || { full_name: email.split("@")[0] }
+        }));
+      }
+
       return { success: true, user: data.user, session: data.session };
     } catch (e) {
       return { success: false, error: e.message };
@@ -121,7 +145,6 @@ const Auth = {
     if (!user) return { success: false, error: "Tidak ada sesi pengguna aktif." };
 
     if (!client) {
-      // Local fallback update
       const localUser = JSON.parse(localStorage.getItem("monetrac_local_user") || "{}");
       if (fullName) {
         localUser.user_metadata = localUser.user_metadata || {};
@@ -144,11 +167,9 @@ const Auth = {
         updatePayload.password = password.trim();
       }
 
-      // 1. Update Supabase Auth User
       const { data, error } = await client.auth.updateUser(updatePayload);
       if (error) throw error;
 
-      // 2. Update public.profiles table
       if (fullName || email) {
         await client
           .from("profiles")

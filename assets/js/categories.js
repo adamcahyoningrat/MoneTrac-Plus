@@ -9,8 +9,10 @@ async function renderCategories() {
   const expenseCategories = categories.filter(c => c.type === "Expense");
   const incomeCategories = categories.filter(c => c.type === "Income");
 
-  document.getElementById("cat-expense-count").textContent = `${expenseCategories.length} Kategori`;
-  document.getElementById("cat-income-count").textContent = `${incomeCategories.length} Kategori`;
+  const expCount = document.getElementById("cat-expense-count");
+  const incCount = document.getElementById("cat-income-count");
+  if (expCount) expCount.textContent = `${expenseCategories.length} Kategori`;
+  if (incCount) incCount.textContent = `${incomeCategories.length} Kategori`;
 
   const expenseGrid = document.getElementById("categories-expense-grid");
   const incomeGrid = document.getElementById("categories-income-grid");
@@ -49,12 +51,9 @@ function renderCategoryCard(c, transactions) {
   `;
 }
 
-async function openCategoryModal(catId = null) {
-  let catToEdit = null;
-  if (catId) {
-    const categories = await Storage.getCategories();
-    catToEdit = categories.find(c => c.id === catId);
-  }
+function openCategoryModal(catId = null) {
+  const categories = Storage.getCachedCategories();
+  const catToEdit = catId ? categories.find(c => c.id === catId) : null;
 
   let modal = document.getElementById("universal-modal");
   if (!modal) {
@@ -74,42 +73,44 @@ async function openCategoryModal(catId = null) {
         <button class="modal-close" onclick="Modal.close()">&times;</button>
       </div>
 
-      <form id="category-form" class="modal-body">
-        <input type="hidden" id="cat-id" value="${catToEdit ? catToEdit.id : ''}">
+      <form id="category-form" class="modal-form-wrapper">
+        <div class="modal-body">
+          <input type="hidden" id="cat-id" value="${catToEdit ? catToEdit.id : ''}">
 
-        <div class="form-group">
-          <label class="form-label">Nama Kategori *</label>
-          <input type="text" id="cat-name" class="form-control" placeholder="Contoh: Makanan, Transportasi, Gaji" value="${catToEdit ? catToEdit.name : ''}" required>
-        </div>
+          <div class="form-group">
+            <label class="form-label">Nama Kategori *</label>
+            <input type="text" id="cat-name" class="form-control" placeholder="Contoh: Makanan, Transportasi, Gaji" value="${catToEdit ? catToEdit.name : ''}" required>
+          </div>
 
-        <div class="form-group">
-          <label class="form-label">Tipe Transaksi *</label>
-          <select id="cat-type" class="form-control" required>
-            <option value="Expense" ${catToEdit && catToEdit.type === 'Expense' ? 'selected' : ''}>Pengeluaran (Expense)</option>
-            <option value="Income" ${catToEdit && catToEdit.type === 'Income' ? 'selected' : ''}>Pemasukan (Income)</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Warna & Ikon</label>
-          <div style="display:flex;gap:10px;">
-            <input type="color" id="cat-color" class="form-control" value="${catToEdit ? catToEdit.color : '#2563eb'}" style="width:60px;padding:4px;">
-            <select id="cat-icon" class="form-control" style="flex:1;">
-              <option value="tag" ${catToEdit && catToEdit.icon === 'tag' ? 'selected' : ''}>Tag / Label</option>
-              <option value="utensils" ${catToEdit && catToEdit.icon === 'utensils' ? 'selected' : ''}>Makanan & Minuman</option>
-              <option value="car" ${catToEdit && catToEdit.icon === 'car' ? 'selected' : ''}>Transportasi / Bensin</option>
-              <option value="wifi" ${catToEdit && catToEdit.icon === 'wifi' ? 'selected' : ''}>Internet & Kuota</option>
-              <option value="bolt" ${catToEdit && catToEdit.icon === 'bolt' ? 'selected' : ''}>Listrik & Utilitas</option>
-              <option value="cart-shopping" ${catToEdit && catToEdit.icon === 'cart-shopping' ? 'selected' : ''}>Belanja / Olshop</option>
-              <option value="briefcase" ${catToEdit && catToEdit.icon === 'briefcase' ? 'selected' : ''}>Gaji / Pekerjaan</option>
-              <option value="laptop" ${catToEdit && catToEdit.icon === 'laptop' ? 'selected' : ''}>Freelance / Projek</option>
-              <option value="gift" ${catToEdit && catToEdit.icon === 'gift' ? 'selected' : ''}>Hadiah & Hiburan</option>
-              <option value="receipt" ${catToEdit && catToEdit.icon === 'receipt' ? 'selected' : ''}>Biaya Admin Bank</option>
+          <div class="form-group">
+            <label class="form-label">Tipe Transaksi *</label>
+            <select id="cat-type" class="form-control" required>
+              <option value="Expense" ${catToEdit && catToEdit.type === 'Expense' ? 'selected' : ''}>Pengeluaran (Expense)</option>
+              <option value="Income" ${catToEdit && catToEdit.type === 'Income' ? 'selected' : ''}>Pemasukan (Income)</option>
             </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Warna & Ikon</label>
+            <div style="display:flex;gap:10px;">
+              <input type="color" id="cat-color" class="form-control" value="${catToEdit ? catToEdit.color : '#2563eb'}" style="width:60px;padding:4px;">
+              <select id="cat-icon" class="form-control" style="flex:1;">
+                <option value="tag" ${catToEdit && catToEdit.icon === 'tag' ? 'selected' : ''}>Tag / Label</option>
+                <option value="utensils" ${catToEdit && catToEdit.icon === 'utensils' ? 'selected' : ''}>Makanan & Minuman</option>
+                <option value="car" ${catToEdit && catToEdit.icon === 'car' ? 'selected' : ''}>Transportasi / Bensin</option>
+                <option value="wifi" ${catToEdit && catToEdit.icon === 'wifi' ? 'selected' : ''}>Internet & Kuota</option>
+                <option value="bolt" ${catToEdit && catToEdit.icon === 'bolt' ? 'selected' : ''}>Listrik & Utilitas</option>
+                <option value="cart-shopping" ${catToEdit && catToEdit.icon === 'cart-shopping' ? 'selected' : ''}>Belanja / Olshop</option>
+                <option value="briefcase" ${catToEdit && catToEdit.icon === 'briefcase' ? 'selected' : ''}>Gaji / Pekerjaan</option>
+                <option value="laptop" ${catToEdit && catToEdit.icon === 'laptop' ? 'selected' : ''}>Freelance / Projek</option>
+                <option value="gift" ${catToEdit && catToEdit.icon === 'gift' ? 'selected' : ''}>Hadiah & Hiburan</option>
+                <option value="receipt" ${catToEdit && catToEdit.icon === 'receipt' ? 'selected' : ''}>Biaya Admin Bank</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div class="modal-footer" style="padding:0;border:none;margin-top:16px;">
+        <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="Modal.close()">Batal</button>
           <button type="submit" class="btn btn-primary">Simpan Kategori</button>
         </div>
@@ -133,9 +134,9 @@ async function openCategoryModal(catId = null) {
       icon
     });
 
+    Modal.close();
     if (res.success) {
       Utils.showToast("Kategori berhasil disimpan!", "success");
-      Modal.close();
       renderCategories();
     } else {
       Utils.showToast("Gagal menyimpan kategori: " + res.error, "error");
@@ -158,3 +159,5 @@ async function deleteCategory(id) {
 }
 
 window.renderCategories = renderCategories;
+Modal.openCategoryModal = openCategoryModal;
+window.openCategoryModal = openCategoryModal;

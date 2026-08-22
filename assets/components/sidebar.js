@@ -28,10 +28,10 @@ const Sidebar = {
           <button class="modal-close d-mobile-only" id="mobile-sidebar-close" style="margin-left:auto;font-size:1.4rem;">&times;</button>
         </div>
 
-        <nav class="sidebar-menu">
+        <nav class="sidebar-menu" style="display:flex;flex-direction:column;gap:6px;padding:16px 12px;overflow-y:auto;flex:1;">
           <div class="menu-category">Menu Utama</div>
           ${navItems.map(item => `
-            <a href="${item.href}" class="menu-item ${activePage === item.id ? 'active' : ''}">
+            <a href="${item.href}" class="menu-item ${activePage === item.id ? 'active' : ''}" style="display:flex;align-items:center;width:100%;gap:12px;padding:11px 14px;border-radius:12px;text-decoration:none;box-sizing:border-box;">
               <i class="fa-solid ${item.icon}"></i>
               <span>${item.label}</span>
               ${item.badge ? `<span style="margin-left:auto;background:var(--accent-gradient);color:#fff;font-size:0.68rem;padding:2px 7px;border-radius:999px;font-weight:700;">${item.badge}</span>` : ''}

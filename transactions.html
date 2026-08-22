@@ -127,7 +127,7 @@
     </div>
   </div>
 
-  <!-- Universal Scripts -->
+    <!-- Universal Scripts -->
   <script src="assets/js/supabase-config.js"></script>
   <script src="assets/js/auth.js"></script>
   <script src="assets/js/utils.js"></script>
@@ -141,12 +141,8 @@
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
       await AppState.init("transactions", "Transaksi", "Kelola riwayat pengeluaran, pemasukan, dan transfer saldo");
-      if (typeof transactionsInit === "function") {
-        transactionsInit();
-      } else if (typeof renderTransaksi === "function") {
-        renderTransaksi();
-      } else if (typeof renderDashboard === "function") {
-        renderDashboard();
+      if (typeof renderTransactions === "function") {
+        renderTransactions();
       }
     });
   </script>

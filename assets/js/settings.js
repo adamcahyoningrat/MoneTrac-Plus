@@ -8,13 +8,17 @@ async function renderSettings() {
   // 1. User Info
   if (user) {
     const name = (user.user_metadata && user.user_metadata.full_name) || (user.email ? user.email.split("@")[0] : "Pengguna");
-    document.getElementById("settings-user-name").value = name;
-    document.getElementById("settings-user-email").value = user.email || "";
+    const nameInput = document.getElementById("settings-user-name");
+    const emailInput = document.getElementById("settings-user-email");
+    if (nameInput) nameInput.value = name;
+    if (emailInput) emailInput.value = user.email || "";
   }
 
-  // 2. Supabase Settings
-  document.getElementById("settings-supabase-url").value = SupabaseConfig.getUrl();
-  document.getElementById("settings-supabase-key").value = SupabaseConfig.getAnonKey();
+  // 2. Supabase Settings (if fields exist)
+  const urlInput = document.getElementById("settings-supabase-url");
+  const keyInput = document.getElementById("settings-supabase-key");
+  if (urlInput) urlInput.value = SupabaseConfig.getUrl();
+  if (keyInput) keyInput.value = SupabaseConfig.getAnonKey();
 
   const isConfigured = SupabaseConfig.isConfigured();
   const statusBadge = document.getElementById("supabase-status-badge");
@@ -23,8 +27,8 @@ async function renderSettings() {
       statusBadge.className = "badge badge-income";
       statusBadge.innerHTML = `<i class="fa-solid fa-circle-check"></i> Supabase Aktif`;
     } else {
-      statusBadge.className = "badge badge-expense";
-      statusBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Mode Lokal / Offline`;
+      statusBadge.className = "badge badge-income";
+      statusBadge.innerHTML = `<i class="fa-solid fa-circle-check"></i> Penyimpanan Lokal Aktif`;
     }
   }
 
@@ -38,17 +42,19 @@ async function renderSettings() {
   const currentTheme = AppState.getTheme();
   const themeDark = document.getElementById("theme-dark");
   const themeLight = document.getElementById("theme-light");
-  if (themeDark && themeLight) {
-    themeDark.checked = currentTheme === "dark";
-    themeLight.checked = currentTheme === "light";
-  }
+  if (themeDark) themeDark.checked = currentTheme === "dark";
+  if (themeLight) themeLight.checked = currentTheme === "light";
 }
 
 async function saveUserProfile(e) {
   if (e) e.preventDefault();
-  const name = document.getElementById("settings-user-name").value.trim();
-  const email = document.getElementById("settings-user-email").value.trim();
-  const password = document.getElementById("settings-new-password")?.value || "";
+  const nameInput = document.getElementById("settings-user-name");
+  const emailInput = document.getElementById("settings-user-email");
+  const pwdInput = document.getElementById("settings-new-password");
+
+  const name = nameInput ? nameInput.value.trim() : "";
+  const email = emailInput ? emailInput.value.trim() : "";
+  const password = pwdInput ? pwdInput.value : "";
 
   if (!name) {
     Utils.showToast("Nama lengkap tidak boleh kosong!", "warning");
@@ -70,9 +76,7 @@ async function saveUserProfile(e) {
 
   if (res.success) {
     Utils.showToast(res.message, "success");
-    if (document.getElementById("settings-new-password")) {
-      document.getElementById("settings-new-password").value = "";
-    }
+    if (pwdInput) pwdInput.value = "";
     Navbar.updateUserInfo();
     Sidebar.updateUserCard();
   } else {
@@ -81,8 +85,10 @@ async function saveUserProfile(e) {
 }
 
 async function saveSupabaseConfig() {
-  const url = document.getElementById("settings-supabase-url").value;
-  const key = document.getElementById("settings-supabase-key").value;
+  const urlInput = document.getElementById("settings-supabase-url");
+  const keyInput = document.getElementById("settings-supabase-key");
+  const url = urlInput ? urlInput.value : "";
+  const key = keyInput ? keyInput.value : "";
 
   SupabaseConfig.saveCredentials(url, key);
   const test = await SupabaseConfig.testConnection();
@@ -106,7 +112,8 @@ async function testSupabaseConnection() {
 }
 
 async function importGSheetJSON() {
-  const jsonInput = document.getElementById("import-json-input").value;
+  const jsonEl = document.getElementById("import-json-input");
+  const jsonInput = jsonEl ? jsonEl.value : "";
   if (!jsonInput.trim()) {
     Utils.showToast("Tempelkan data JSON dari Google Sheet terlebih dahulu!", "warning");
     return;
@@ -117,7 +124,7 @@ async function importGSheetJSON() {
     const res = await Storage.importFromGSheetData(jsonInput);
     if (res.success) {
       Utils.showToast(res.message, "success");
-      document.getElementById("import-json-input").value = "";
+      if (jsonEl) jsonEl.value = "";
     } else {
       Utils.showToast("Gagal migrasi: " + res.error, "error");
     }

@@ -58,17 +58,17 @@
       <div class="auth-header">
         <div class="auth-brand">
           <img src="assets/img/logo-icon.svg" alt="MoneTrac+ Logo" class="brand-logo-img" style="width:48px;height:48px;border-radius:14px;">
-          <div class="brand-text" style="font-size:1.8rem;font-weight:900;">Mone<span class="brand-accent" style="background:linear-gradient(135deg, #22d3ee 0%, #06b6d4 50%, #0ea5e9 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Trac</span><span class="brand-plus" style="background:linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:1.3em;margin-left:2px;font-weight:900;">+</span></div>
+          <div class="brand-text" style="font-size:1.8rem;font-weight:900;">Mone<span class="brand-accent" style="background:linear-gradient(135deg, #22d3ee 0%, #06b6d4 50%, #0ea5e9 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Trac</span><span class="brand-plus" style="background:linear-gradient(135deg, #22d3ee 0%, #06b6d4 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-size:0.75em;vertical-align:super;margin-left:2px;font-weight:900;transform:translateY(-0.3em);display:inline-block;">+</span></div>
         </div>
         <p style="color:var(--text-muted);font-size:0.85rem;" id="auth-subtitle">Aplikasi Pengelola Keuangan Pribadi & Target Tabungan</p>
       </div>
 
       <!-- Auth Mode Switcher -->
-      <div class="type-tabs" style="margin-bottom:20px;">
-        <button type="button" class="type-tab-btn active" id="tab-login" onclick="switchAuthTab('login')">
+      <div class="type-tabs" style="margin-bottom:20px;display:flex;background:#f1f5f9;border-radius:12px;padding:4px;gap:4px;border:1px solid #e2e8f0;">
+        <button type="button" class="type-tab-btn active" id="tab-login" onclick="switchAuthTab('login')" style="flex:1;padding:9px 8px;border:none;outline:none;font-weight:700;font-size:0.85rem;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">
           <i class="fa-solid fa-right-to-bracket"></i> Masuk
         </button>
-        <button type="button" class="type-tab-btn" id="tab-register" onclick="switchAuthTab('register')">
+        <button type="button" class="type-tab-btn" id="tab-register" onclick="switchAuthTab('register')" style="flex:1;padding:9px 8px;border:none;outline:none;font-weight:700;font-size:0.85rem;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;background:transparent;color:#64748b;">
           <i class="fa-solid fa-user-plus"></i> Daftar Akun
         </button>
       </div>

@@ -96,7 +96,7 @@
     </div>
   </div>
 
-  <!-- Universal Scripts -->
+    <!-- Universal Scripts -->
   <script src="assets/js/supabase-config.js"></script>
   <script src="assets/js/auth.js"></script>
   <script src="assets/js/utils.js"></script>
@@ -110,12 +110,8 @@
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
       await AppState.init("budget", "Anggaran (Budget)", "Tetapkan dan kontrol batas pengeluaran bulanan Anda");
-      if (typeof budgetInit === "function") {
-        budgetInit();
-      } else if (typeof renderAnggaran(Budget) === "function") {
-        renderAnggaran(Budget)();
-      } else if (typeof renderDashboard === "function") {
-        renderDashboard();
+      if (typeof renderBudget === "function") {
+        renderBudget();
       }
     });
   </script>

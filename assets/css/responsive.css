@@ -288,25 +288,34 @@
     font-size: 0.82rem;
   }
 
-  /* Mobile Modal (Bottom Sheet style on small screens) */
+      /* Mobile Bottom Sheet Modal */
   .modal-overlay {
-    padding: 0;
-    align-items: flex-end;
+    padding: 0 !important;
+    align-items: flex-end !important;
+    justify-content: center !important;
   }
 
   .modal-container {
-    max-width: 100%;
-    max-height: 92vh;
-    border-radius: 20px 20px 0 0;
-    transform: translateY(100%);
+    max-width: 100% !important;
+    width: 100% !important;
+    border-radius: 20px 20px 0 0 !important;
+    max-height: 85vh !important;
+    margin: 0 !important;
+    animation: modalSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
 
-  .modal-overlay.active .modal-container {
-    transform: translateY(0);
+  @keyframes modalSlideUp {
+    0% { transform: translateY(100%); }
+    100% { transform: translateY(0); }
   }
 
-  .modal-header, .modal-body, .modal-footer {
-    padding: 16px;
+  .modal-body {
+    padding: 16px 18px !important;
+    max-height: 58vh !important;
+  }
+
+  .modal-footer {
+    padding: 12px 18px !important;
   }
 
   .type-tabs {

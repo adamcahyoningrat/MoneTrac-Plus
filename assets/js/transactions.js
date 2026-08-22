@@ -3,18 +3,20 @@
  */
 
 let allTransactions = [];
+let allAccounts = [];
+let allCategories = [];
 let currentPage = 1;
 const itemsPerPage = 15;
 
 async function renderTransactions() {
-  const accounts = await Storage.getAccounts();
-  const categories = await Storage.getCategories();
+  allAccounts = await Storage.getAccounts();
+  allCategories = await Storage.getCategories();
   allTransactions = await Storage.getTransactions();
 
-  // Populate Filter Dropdowns
+  // Populate Filter Dropdowns safely
   const accFilter = document.getElementById("filter-account");
   if (accFilter && accFilter.options.length <= 1) {
-    accounts.forEach(a => {
+    allAccounts.forEach(a => {
       const opt = document.createElement("option");
       opt.value = a.id;
       opt.textContent = a.name;
@@ -24,7 +26,7 @@ async function renderTransactions() {
 
   const catFilter = document.getElementById("filter-category");
   if (catFilter && catFilter.options.length <= 1) {
-    categories.forEach(c => {
+    allCategories.forEach(c => {
       const opt = document.createElement("option");
       opt.value = c.name;
       opt.textContent = c.name;
@@ -32,10 +34,17 @@ async function renderTransactions() {
     });
   }
 
-  applyFiltersAndRender(accounts);
+  applyFiltersAndRender();
 }
 
-function applyFiltersAndRender(accounts) {
+function applyFiltersAndRender(accounts = null) {
+  if (accounts && Array.isArray(accounts) && accounts.length > 0) {
+    allAccounts = accounts;
+  }
+  if (!allAccounts || allAccounts.length === 0) {
+    allAccounts = Storage.getCachedAccounts();
+  }
+
   const search = (document.getElementById("search-tx")?.value || "").toLowerCase();
   const typeFilter = document.getElementById("filter-type")?.value || "all";
   const accFilter = document.getElementById("filter-account")?.value || "all";
@@ -65,9 +74,13 @@ function applyFiltersAndRender(accounts) {
     if (t.type === "Expense") totalExpense += (Number(t.amount) || 0);
   });
 
-  document.getElementById("filtered-income").innerHTML = Utils.formatCurrency(totalIncome);
-  document.getElementById("filtered-expense").innerHTML = Utils.formatCurrency(totalExpense);
-  document.getElementById("filtered-count").textContent = `${filtered.length} Transaksi`;
+  const incEl = document.getElementById("filtered-income");
+  const expEl = document.getElementById("filtered-expense");
+  const cntEl = document.getElementById("filtered-count");
+
+  if (incEl) incEl.innerHTML = Utils.formatCurrency(totalIncome);
+  if (expEl) expEl.innerHTML = Utils.formatCurrency(totalExpense);
+  if (cntEl) cntEl.textContent = `${filtered.length} Transaksi`;
 
   // Pagination
   const totalPages = Math.ceil(filtered.length / itemsPerPage) || 1;
@@ -108,8 +121,8 @@ function applyFiltersAndRender(accounts) {
         icon = "fa-right-left";
       }
 
-      const acc = accounts.find(a => a.id === (t.account_id || t.account));
-      const toAcc = accounts.find(a => a.id === (t.to_account_id || t.toAccount));
+      const acc = allAccounts.find(a => a.id === (t.account_id || t.account));
+      const toAcc = allAccounts.find(a => a.id === (t.to_account_id || t.toAccount));
       let accountDisplay = acc ? acc.name : "-";
       if (t.type === "Transfer") {
         accountDisplay = `<span style="color:var(--text-primary);font-weight:600;">${acc ? acc.name : '-'}</span> <i class="fa-solid fa-arrow-right" style="font-size:0.75rem;margin:0 4px;color:var(--transfer);"></i> <span style="color:var(--text-primary);font-weight:600;">${toAcc ? toAcc.name : '-'}</span>`;
@@ -162,7 +175,7 @@ function renderPagination(totalPages) {
 
 function changePage(page) {
   currentPage = page;
-  Storage.getAccounts().then(accounts => applyFiltersAndRender(accounts));
+  applyFiltersAndRender();
 }
 
 async function editTransaction(id) {
@@ -196,5 +209,7 @@ function exportTransactionsCSV() {
   Utils.exportToCSV(`Monetrac_Transaksi_${new Date().toISOString().split("T")[0]}.csv`, data);
 }
 
+window.renderTransactions = renderTransactions;
+window.applyFiltersAndRender = applyFiltersAndRender;
 window.onTransactionSaved = () => renderTransactions();
-window.onPrivacyChanged = () => Storage.getAccounts().then(accounts => applyFiltersAndRender(accounts));
+window.onPrivacyChanged = () => applyFiltersAndRender();

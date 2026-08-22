@@ -14,7 +14,6 @@ async function renderBudget() {
   let totalBudget = 0;
   let totalSpent = 0;
 
-  // Calculate actual spending for each category in current month
   const categorySpending = {};
   transactions.forEach(t => {
     const td = new Date(t.date);
@@ -29,10 +28,15 @@ async function renderBudget() {
   const remainingBudget = Math.max(0, totalBudget - totalSpent);
   const overallPercent = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
 
-  document.getElementById("budget-total-limit").innerHTML = Utils.formatCurrency(totalBudget);
-  document.getElementById("budget-total-spent").innerHTML = Utils.formatCurrency(totalSpent);
-  document.getElementById("budget-total-remaining").innerHTML = Utils.formatCurrency(remainingBudget);
-  document.getElementById("budget-overall-percent").textContent = `${overallPercent}%`;
+  const limitEl = document.getElementById("budget-total-limit");
+  const spentEl = document.getElementById("budget-total-spent");
+  const remEl = document.getElementById("budget-total-remaining");
+  const pctEl = document.getElementById("budget-overall-percent");
+
+  if (limitEl) limitEl.innerHTML = Utils.formatCurrency(totalBudget);
+  if (spentEl) spentEl.innerHTML = Utils.formatCurrency(totalSpent);
+  if (remEl) remEl.innerHTML = Utils.formatCurrency(remainingBudget);
+  if (pctEl) pctEl.textContent = `${overallPercent}%`;
 
   const listContainer = document.getElementById("budget-list");
   if (!listContainer) return;
@@ -95,15 +99,11 @@ async function renderBudget() {
   }).join('');
 }
 
-async function openBudgetModal(budgetId = null) {
-  const categories = await Storage.getCategories();
+function openBudgetModal(budgetId = null) {
+  const categories = Storage.getCachedCategories();
   const expenseCategories = categories.filter(c => c.type === "Expense");
-
-  let budgetToEdit = null;
-  if (budgetId) {
-    const budgets = await Storage.getBudgets();
-    budgetToEdit = budgets.find(b => b.id === budgetId);
-  }
+  const budgets = Storage.getCachedBudgets();
+  const budgetToEdit = budgetId ? budgets.find(b => b.id === budgetId) : null;
 
   let modal = document.getElementById("universal-modal");
   if (!modal) {
@@ -123,26 +123,28 @@ async function openBudgetModal(budgetId = null) {
         <button class="modal-close" onclick="Modal.close()">&times;</button>
       </div>
 
-      <form id="budget-form" class="modal-body">
-        <input type="hidden" id="budget-id" value="${budgetToEdit ? budgetToEdit.id : ''}">
+      <form id="budget-form" class="modal-form-wrapper">
+        <div class="modal-body">
+          <input type="hidden" id="budget-id" value="${budgetToEdit ? budgetToEdit.id : ''}">
 
-        <div class="form-group">
-          <label class="form-label">Kategori Pengeluaran *</label>
-          <select id="budget-category" class="form-control" required>
-            ${expenseCategories.map(c => `
-              <option value="${c.name}" ${budgetToEdit && (budgetToEdit.category_name === c.name || budgetToEdit.category === c.name) ? 'selected' : ''}>
-                ${c.name}
-              </option>
-            `).join('')}
-          </select>
+          <div class="form-group">
+            <label class="form-label">Kategori Pengeluaran *</label>
+            <select id="budget-category" class="form-control" required>
+              ${expenseCategories.map(c => `
+                <option value="${c.name}" ${budgetToEdit && (budgetToEdit.category_name === c.name || budgetToEdit.category === c.name) ? 'selected' : ''}>
+                  ${c.name}
+                </option>
+              `).join('')}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Batas Anggaran Bulanan (Rp) *</label>
+            <input type="number" id="budget-amount" class="form-control" placeholder="0" value="${budgetToEdit ? budgetToEdit.amount : ''}" required min="1000" style="font-size:1.2rem;font-weight:700;">
+          </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label">Batas Anggaran Bulanan (Rp) *</label>
-          <input type="number" id="budget-amount" class="form-control" placeholder="0" value="${budgetToEdit ? budgetToEdit.amount : ''}" required min="1000" style="font-size:1.2rem;font-weight:700;">
-        </div>
-
-        <div class="modal-footer" style="padding:0;border:none;margin-top:16px;">
+        <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="Modal.close()">Batal</button>
           <button type="submit" class="btn btn-primary">Simpan Anggaran</button>
         </div>
@@ -162,9 +164,9 @@ async function openBudgetModal(budgetId = null) {
       amount
     });
 
+    Modal.close();
     if (res.success) {
       Utils.showToast("Anggaran berhasil disimpan!", "success");
-      Modal.close();
       renderBudget();
     } else {
       Utils.showToast("Gagal menyimpan: " + res.error, "error");
@@ -188,3 +190,5 @@ async function deleteBudget(id) {
 
 window.renderBudget = renderBudget;
 window.onPrivacyChanged = () => renderBudget();
+Modal.openBudgetModal = openBudgetModal;
+window.openBudgetModal = openBudgetModal;

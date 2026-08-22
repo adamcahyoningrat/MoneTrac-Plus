@@ -7,14 +7,15 @@ async function renderAccounts() {
   const transactions = await Storage.getTransactions();
 
   const totalNetWorth = accounts.reduce((acc, a) => acc + (Number(a.balance) || 0), 0);
-  document.getElementById("accounts-total-networth").innerHTML = Utils.formatCurrency(totalNetWorth);
-  document.getElementById("accounts-count").textContent = `${accounts.length} Akun Terdaftar`;
+  const networthEl = document.getElementById("accounts-total-networth");
+  const countEl = document.getElementById("accounts-count");
+  if (networthEl) networthEl.innerHTML = Utils.formatCurrency(totalNetWorth);
+  if (countEl) countEl.textContent = `${accounts.length} Akun Terdaftar`;
 
   const grid = document.getElementById("accounts-grid");
   if (!grid) return;
 
   grid.innerHTML = accounts.map(a => {
-    // Count transactions for this account
     const txCount = transactions.filter(t => t.account_id === a.id || t.to_account_id === a.id || t.account === a.id || t.toAccount === a.id).length;
 
     return `
@@ -58,12 +59,9 @@ async function renderAccounts() {
   }).join('');
 }
 
-async function openAccountModal(accId = null) {
-  let accToEdit = null;
-  if (accId) {
-    const accounts = await Storage.getAccounts();
-    accToEdit = accounts.find(a => a.id === accId);
-  }
+function openAccountModal(accId = null) {
+  const accounts = Storage.getCachedAccounts();
+  const accToEdit = accId ? accounts.find(a => a.id === accId) : null;
 
   let modal = document.getElementById("universal-modal");
   if (!modal) {
@@ -83,45 +81,47 @@ async function openAccountModal(accId = null) {
         <button class="modal-close" onclick="Modal.close()">&times;</button>
       </div>
 
-      <form id="account-form" class="modal-body">
-        <input type="hidden" id="acc-id" value="${accToEdit ? accToEdit.id : ''}">
+      <form id="account-form" class="modal-form-wrapper">
+        <div class="modal-body">
+          <input type="hidden" id="acc-id" value="${accToEdit ? accToEdit.id : ''}">
 
-        <div class="form-group">
-          <label class="form-label">Nama Akun / Bank / E-Wallet *</label>
-          <input type="text" id="acc-name" class="form-control" placeholder="Contoh: BCA, Mandiri, GoPay, ShopeePay, Cash" value="${accToEdit ? accToEdit.name : ''}" required>
-        </div>
+          <div class="form-group">
+            <label class="form-label">Nama Akun / Bank / E-Wallet *</label>
+            <input type="text" id="acc-name" class="form-control" placeholder="Contoh: BCA, Mandiri, GoPay, ShopeePay, Cash" value="${accToEdit ? accToEdit.name : ''}" required>
+          </div>
 
-        <div class="form-group">
-          <label class="form-label">Tipe Akun *</label>
-          <select id="acc-type" class="form-control" required>
-            <option value="Bank" ${accToEdit && accToEdit.type === 'Bank' ? 'selected' : ''}>Rekening Bank</option>
-            <option value="Cash" ${accToEdit && accToEdit.type === 'Cash' ? 'selected' : ''}>Cash / Tunai</option>
-            <option value="E-Wallet" ${accToEdit && accToEdit.type === 'E-Wallet' ? 'selected' : ''}>E-Wallet / Dompet Digital</option>
-            <option value="Credit Card" ${accToEdit && accToEdit.type === 'Credit Card' ? 'selected' : ''}>Kartu Kredit / Paylater</option>
-            <option value="Investment" ${accToEdit && accToEdit.type === 'Investment' ? 'selected' : ''}>Investasi / Saham / Reksadana</option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Saldo ${accToEdit ? 'Saat Ini' : 'Awal'} (Rp) *</label>
-          <input type="number" id="acc-balance" class="form-control" placeholder="0" value="${accToEdit ? accToEdit.balance : '0'}" required>
-        </div>
-
-        <div class="form-group">
-          <label class="form-label">Warna & Ikon</label>
-          <div style="display:flex;gap:10px;">
-            <input type="color" id="acc-color" class="form-control" value="${accToEdit ? accToEdit.color : '#16a34a'}" style="width:60px;padding:4px;">
-            <select id="acc-icon" class="form-control" style="flex:1;">
-              <option value="wallet" ${accToEdit && accToEdit.icon === 'wallet' ? 'selected' : ''}>Dompet (Wallet)</option>
-              <option value="building-columns" ${accToEdit && accToEdit.icon === 'building-columns' ? 'selected' : ''}>Bank</option>
-              <option value="money-bill" ${accToEdit && accToEdit.icon === 'money-bill' ? 'selected' : ''}>Uang Tunai (Cash)</option>
-              <option value="credit-card" ${accToEdit && accToEdit.icon === 'credit-card' ? 'selected' : ''}>Kartu Kredit</option>
-              <option value="chart-line" ${accToEdit && accToEdit.icon === 'chart-line' ? 'selected' : ''}>Investasi</option>
+          <div class="form-group">
+            <label class="form-label">Tipe Akun *</label>
+            <select id="acc-type" class="form-control" required>
+              <option value="Bank" ${accToEdit && accToEdit.type === 'Bank' ? 'selected' : ''}>Rekening Bank</option>
+              <option value="Cash" ${accToEdit && accToEdit.type === 'Cash' ? 'selected' : ''}>Cash / Tunai</option>
+              <option value="E-Wallet" ${accToEdit && accToEdit.type === 'E-Wallet' ? 'selected' : ''}>E-Wallet / Dompet Digital</option>
+              <option value="Credit Card" ${accToEdit && accToEdit.type === 'Credit Card' ? 'selected' : ''}>Kartu Kredit / Paylater</option>
+              <option value="Investment" ${accToEdit && accToEdit.type === 'Investment' ? 'selected' : ''}>Investasi / Saham / Reksadana</option>
             </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Saldo ${accToEdit ? 'Saat Ini' : 'Awal'} (Rp) *</label>
+            <input type="number" id="acc-balance" class="form-control" placeholder="0" value="${accToEdit ? accToEdit.balance : '0'}" required>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Warna & Ikon</label>
+            <div style="display:flex;gap:10px;">
+              <input type="color" id="acc-color" class="form-control" value="${accToEdit ? accToEdit.color : '#16a34a'}" style="width:60px;padding:4px;">
+              <select id="acc-icon" class="form-control" style="flex:1;">
+                <option value="wallet" ${accToEdit && accToEdit.icon === 'wallet' ? 'selected' : ''}>Dompet (Wallet)</option>
+                <option value="building-columns" ${accToEdit && accToEdit.icon === 'building-columns' ? 'selected' : ''}>Bank</option>
+                <option value="money-bill" ${accToEdit && accToEdit.icon === 'money-bill' ? 'selected' : ''}>Uang Tunai (Cash)</option>
+                <option value="credit-card" ${accToEdit && accToEdit.icon === 'credit-card' ? 'selected' : ''}>Kartu Kredit</option>
+                <option value="chart-line" ${accToEdit && accToEdit.icon === 'chart-line' ? 'selected' : ''}>Investasi</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div class="modal-footer" style="padding:0;border:none;margin-top:16px;">
+        <div class="modal-footer">
           <button type="button" class="btn btn-secondary" onclick="Modal.close()">Batal</button>
           <button type="submit" class="btn btn-primary">Simpan Akun</button>
         </div>
@@ -147,9 +147,9 @@ async function openAccountModal(accId = null) {
       icon
     });
 
+    Modal.close();
     if (res.success) {
       Utils.showToast("Akun berhasil disimpan!", "success");
-      Modal.close();
       renderAccounts();
     } else {
       Utils.showToast("Gagal menyimpan akun: " + res.error, "error");
@@ -173,3 +173,5 @@ async function deleteAccount(id) {
 
 window.renderAccounts = renderAccounts;
 window.onPrivacyChanged = () => renderAccounts();
+Modal.openAccountModal = openAccountModal;
+window.openAccountModal = openAccountModal;

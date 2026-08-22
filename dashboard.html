@@ -165,7 +165,7 @@
     </div>
   </div>
 
-  <!-- Universal Scripts -->
+    <!-- Universal Scripts -->
   <script src="assets/js/supabase-config.js"></script>
   <script src="assets/js/auth.js"></script>
   <script src="assets/js/utils.js"></script>
@@ -179,11 +179,7 @@
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
       await AppState.init("dashboard", "Dashboard", "Ringkasan kondisi finansial & performa keuangan Anda");
-      if (typeof dashboardInit === "function") {
-        dashboardInit();
-      } else if (typeof renderDashboard === "function") {
-        renderDashboard();
-      } else if (typeof renderDashboard === "function") {
+      if (typeof renderDashboard === "function") {
         renderDashboard();
       }
     });

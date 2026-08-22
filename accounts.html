@@ -56,7 +56,7 @@
     </div>
   </div>
 
-  <!-- Universal Scripts -->
+    <!-- Universal Scripts -->
   <script src="assets/js/supabase-config.js"></script>
   <script src="assets/js/auth.js"></script>
   <script src="assets/js/utils.js"></script>
@@ -70,12 +70,8 @@
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
       await AppState.init("accounts", "Akun & Dompet", "Kelola rekening bank, uang tunai, e-wallet, dan kartu");
-      if (typeof accountsInit === "function") {
-        accountsInit();
-      } else if (typeof renderAkun&Dompet === "function") {
-        renderAkun&Dompet();
-      } else if (typeof renderDashboard === "function") {
-        renderDashboard();
+      if (typeof renderAccounts === "function") {
+        renderAccounts();
       }
     });
   </script>

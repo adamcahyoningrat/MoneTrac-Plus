@@ -90,7 +90,7 @@
     </div>
   </div>
 
-  <!-- Universal Scripts -->
+    <!-- Universal Scripts -->
   <script src="assets/js/supabase-config.js"></script>
   <script src="assets/js/auth.js"></script>
   <script src="assets/js/utils.js"></script>
@@ -104,12 +104,8 @@
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
       await AppState.init("kpi", "KPI Keuangan", "Metrik kesehatan finansial, rasio tabungan, dan ketahanan dana");
-      if (typeof kpiInit === "function") {
-        kpiInit();
-      } else if (typeof renderKPIKeuangan === "function") {
-        renderKPIKeuangan();
-      } else if (typeof renderDashboard === "function") {
-        renderDashboard();
+      if (typeof renderKPI === "function") {
+        renderKPI();
       }
     });
   </script>
