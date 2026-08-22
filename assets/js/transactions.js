@@ -56,8 +56,10 @@ function applyFiltersAndRender(accounts = null) {
     if (typeFilter !== "all" && t.type !== typeFilter) return false;
     if (accFilter !== "all" && (t.account_id !== accFilter && t.to_account_id !== accFilter && t.account !== accFilter && t.toAccount !== accFilter)) return false;
     if (catFilter !== "all" && (t.category_name !== catFilter && t.category !== catFilter)) return false;
-    if (startDate && t.date < startDate) return false;
-    if (endDate && t.date > endDate) return false;
+    
+    const tDate = (t.date || "").substring(0, 10);
+    if (startDate && tDate < startDate) return false;
+    if (endDate && tDate > endDate) return false;
     if (search) {
       const desc = (t.description || "").toLowerCase();
       const cat = (t.category_name || t.category || "").toLowerCase();
@@ -121,11 +123,11 @@ function applyFiltersAndRender(accounts = null) {
         icon = "fa-right-left";
       }
 
-      const acc = allAccounts.find(a => a.id === (t.account_id || t.account));
-      const toAcc = allAccounts.find(a => a.id === (t.to_account_id || t.toAccount));
-      let accountDisplay = acc ? acc.name : "-";
+      const acc = allAccounts.find(a => a.id === t.account_id || a.id === t.account || a.name === t.account_name);
+      const toAcc = allAccounts.find(a => a.id === t.to_account_id || a.id === t.toAccount || a.name === t.to_account_name);
+      let accountDisplay = acc ? acc.name : (t.account_name || "Akun");
       if (t.type === "Transfer") {
-        accountDisplay = `<span style="color:var(--text-primary);font-weight:600;">${acc ? acc.name : '-'}</span> <i class="fa-solid fa-arrow-right" style="font-size:0.75rem;margin:0 4px;color:var(--transfer);"></i> <span style="color:var(--text-primary);font-weight:600;">${toAcc ? toAcc.name : '-'}</span>`;
+        accountDisplay = `<span style="color:var(--text-primary);font-weight:600;">${acc ? acc.name : (t.account_name || '-')}</span> <i class="fa-solid fa-arrow-right" style="font-size:0.75rem;margin:0 4px;color:var(--transfer);"></i> <span style="color:var(--text-primary);font-weight:600;">${toAcc ? toAcc.name : (t.to_account_name || '-')}</span>`;
       }
 
       return `
