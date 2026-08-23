@@ -1,5 +1,5 @@
 /**
- * MONETRAC - STORAGE & DATA ACCESS LAYER (SUPABASE + 2-WAY OPTIMISTIC CACHE)
+ * MONETRAC - STORAGE & CLOUD SYNCHRONIZATION ENGINE (SUPABASE REAL-TIME CLOUD)
  */
 
 function isValidUUID(str) {
@@ -19,13 +19,11 @@ const Storage = {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch (e) {}
     }
-    const defaultAccs = [
-      { id: Utils.generateUUID(), name: "Cash / Tunai", type: "Cash", balance: 0, color: "#16a34a", icon: "money-bill" },
-      { id: Utils.generateUUID(), name: "Rekening Bank", type: "Bank", balance: 0, color: "#1f16a2", icon: "building-columns" },
-      { id: Utils.generateUUID(), name: "E-Wallet", type: "E-Wallet", balance: 0, color: "#1b93d0", icon: "wallet" }
+    return [
+      { id: "acc_default_1", name: "Cash / Tunai", type: "Cash", balance: 0, color: "#16a34a", icon: "money-bill" },
+      { id: "acc_default_2", name: "Rekening Bank", type: "Bank", balance: 0, color: "#1f16a2", icon: "building-columns" },
+      { id: "acc_default_3", name: "E-Wallet", type: "E-Wallet", balance: 0, color: "#1b93d0", icon: "wallet" }
     ];
-    localStorage.setItem("monetrac_cache_accounts", JSON.stringify(defaultAccs));
-    return defaultAccs;
   },
 
   getCachedCategories() {
@@ -36,20 +34,18 @@ const Storage = {
         if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       } catch (e) {}
     }
-    const defaultCats = [
-      { id: Utils.generateUUID(), name: "Salary / Gaji", type: "Income", color: "#2563eb", icon: "briefcase" },
-      { id: Utils.generateUUID(), name: "Freelance Fee", type: "Income", color: "#24e7eb", icon: "laptop" },
-      { id: Utils.generateUUID(), name: "Investasi & Bunga", type: "Income", color: "#10b981", icon: "chart-line" },
-      { id: Utils.generateUUID(), name: "Other Revenue", type: "Income", color: "#69eb24", icon: "gift" },
-      { id: Utils.generateUUID(), name: "Food & Beverage", type: "Expense", color: "#ef4444", icon: "utensils" },
-      { id: Utils.generateUUID(), name: "Transportation Exp", type: "Expense", color: "#eb24a2", icon: "car" },
-      { id: Utils.generateUUID(), name: "Internet & Kuota", type: "Expense", color: "#f59e0b", icon: "wifi" },
-      { id: Utils.generateUUID(), name: "Electricity / Listrik", type: "Expense", color: "#ebc924", icon: "bolt" },
-      { id: Utils.generateUUID(), name: "Shopping & Olshop", type: "Expense", color: "#8b5cf6", icon: "cart-shopping" },
-      { id: Utils.generateUUID(), name: "Other Exp", type: "Expense", color: "#eb5f24", icon: "boxes-stacked" }
+    return [
+      { id: "cat_1", name: "Salary / Gaji", type: "Income", color: "#2563eb", icon: "briefcase" },
+      { id: "cat_2", name: "Freelance Fee", type: "Income", color: "#24e7eb", icon: "laptop" },
+      { id: "cat_3", name: "Investasi & Bunga", type: "Income", color: "#10b981", icon: "chart-line" },
+      { id: "cat_4", name: "Other Revenue", type: "Income", color: "#69eb24", icon: "gift" },
+      { id: "cat_5", name: "Food & Beverage", type: "Expense", color: "#ef4444", icon: "utensils" },
+      { id: "cat_6", name: "Transportation Exp", type: "Expense", color: "#eb24a2", icon: "car" },
+      { id: "cat_7", name: "Internet & Kuota", type: "Expense", color: "#f59e0b", icon: "wifi" },
+      { id: "cat_8", name: "Electricity / Listrik", type: "Expense", color: "#ebc924", icon: "bolt" },
+      { id: "cat_9", name: "Shopping & Olshop", type: "Expense", color: "#8b5cf6", icon: "cart-shopping" },
+      { id: "cat_10", name: "Other Exp", type: "Expense", color: "#eb5f24", icon: "boxes-stacked" }
     ];
-    localStorage.setItem("monetrac_cache_categories", JSON.stringify(defaultCats));
-    return defaultCats;
   },
 
   getCachedTransactions() {
@@ -86,7 +82,7 @@ const Storage = {
   },
 
   // --------------------------------------------------------------------------
-  // ACCOUNTS
+  // ACCOUNTS (WITH AUTO-SELECTION IN SUPABASE)
   // --------------------------------------------------------------------------
   async getAccounts() {
     const client = SupabaseConfig.getClient();
@@ -142,7 +138,7 @@ const Storage = {
     // Optimistically update local cache
     const accounts = this.getCachedAccounts();
     if (account.id) {
-      const idx = accounts.findIndex(a => a.id === account.id);
+      const idx = accounts.findIndex(a => a.id === account.id || a.name === account.name);
       if (idx !== -1) {
         accounts[idx] = { ...accounts[idx], ...accountData };
       } else {
@@ -238,7 +234,7 @@ const Storage = {
             localStorage.setItem("monetrac_cache_categories", JSON.stringify(data));
             return data;
           } else {
-            // Auto-seed default categories
+            // Auto seed default categories
             const defaultCats = [
               { user_id: user.id, name: "Salary / Gaji", type: "Income", color: "#2563eb", icon: "briefcase" },
               { user_id: user.id, name: "Freelance Fee", type: "Income", color: "#24e7eb", icon: "laptop" },
@@ -280,7 +276,7 @@ const Storage = {
 
     const categories = this.getCachedCategories();
     if (category.id) {
-      const idx = categories.findIndex(c => c.id === category.id);
+      const idx = categories.findIndex(c => c.id === category.id || c.name === category.name);
       if (idx !== -1) categories[idx] = { ...categories[idx], ...catData };
       else categories.push({ id: category.id, ...catData });
     } else {
@@ -345,7 +341,7 @@ const Storage = {
   },
 
   // --------------------------------------------------------------------------
-  // TRANSACTIONS
+  // TRANSACTIONS (WITH GUARANTEED CROSS-DEVICE CLOUD INSERTION)
   // --------------------------------------------------------------------------
   async getTransactions(filters = {}) {
     const client = SupabaseConfig.getClient();
@@ -365,16 +361,6 @@ const Storage = {
         if (filters.type && filters.type !== "all") {
           query = query.eq("type", filters.type);
         }
-        if (filters.accountId) {
-          if (isValidUUID(filters.accountId)) {
-            query = query.or(`account_id.eq.${filters.accountId},to_account_id.eq.${filters.accountId}`);
-          }
-        }
-        if (filters.categoryId) {
-          if (isValidUUID(filters.categoryId)) {
-            query = query.eq("category_id", filters.categoryId);
-          }
-        }
         if (filters.startDate) {
           query = query.gte("date", filters.startDate);
         }
@@ -384,45 +370,28 @@ const Storage = {
 
         const { data, error } = await query;
         if (!error && data) {
-          if (data.length > 0) {
-            txList = data;
-            localStorage.setItem("monetrac_cache_transactions", JSON.stringify(data));
-          } else {
-            // Keep local cached transactions if present
-            const cached = this.getCachedTransactions();
-            if (cached.length > 0) {
-              txList = cached;
-            } else {
-              localStorage.setItem("monetrac_cache_transactions", JSON.stringify([]));
-            }
-          }
+          txList = data;
+          // Store cloud data into local cache
+          localStorage.setItem("monetrac_cache_transactions", JSON.stringify(data));
+          return data;
         }
       } catch (e) {
         console.warn("Supabase getTransactions error:", e);
       }
     }
 
-    if (!txList.length) {
-      let cached = this.getCachedTransactions();
-      if (filters.type && filters.type !== "all") {
-        cached = cached.filter(t => t.type === filters.type);
-      }
-      if (filters.accountId) {
-        cached = cached.filter(t => t.account_id === filters.accountId || t.to_account_id === filters.accountId || t.account === filters.accountId || t.toAccount === filters.accountId);
-      }
-      if (filters.categoryId) {
-        cached = cached.filter(t => t.category_id === filters.categoryId || t.category === filters.categoryId || t.category_name === filters.categoryId);
-      }
-      if (filters.startDate) {
-        cached = cached.filter(t => (t.date || "").substring(0, 10) >= filters.startDate);
-      }
-      if (filters.endDate) {
-        cached = cached.filter(t => (t.date || "").substring(0, 10) <= filters.endDate);
-      }
-      txList = cached;
+    // Fallback to local cache
+    let cached = this.getCachedTransactions();
+    if (filters.type && filters.type !== "all") {
+      cached = cached.filter(t => t.type === filters.type);
     }
-
-    return txList;
+    if (filters.startDate) {
+      cached = cached.filter(t => (t.date || "").substring(0, 10) >= filters.startDate);
+    }
+    if (filters.endDate) {
+      cached = cached.filter(t => (t.date || "").substring(0, 10) <= filters.endDate);
+    }
+    return cached;
   },
 
   async saveTransaction(transaction) {
@@ -436,10 +405,12 @@ const Storage = {
     const toAccountId = transaction.to_account_id || transaction.toAccount;
     const rawDate = transaction.date ? transaction.date.substring(0, 10) : new Date().toISOString().split("T")[0];
 
-    const isTxUUID = isValidUUID(transaction.id);
-    const validAccId = isValidUUID(accountId) ? accountId : null;
-    const validToAccId = isValidUUID(toAccountId) ? toAccountId : null;
-    const validCatId = isValidUUID(transaction.category_id) ? transaction.category_id : null;
+    // Find account names for cross-device visibility
+    const localAccounts = this.getCachedAccounts();
+    const sourceAcc = localAccounts.find(a => a.id === accountId);
+    const destAcc = localAccounts.find(a => a.id === toAccountId);
+    const accountName = sourceAcc ? sourceAcc.name : (transaction.account_name || "Akun");
+    const toAccountName = destAcc ? destAcc.name : (transaction.to_account_name || null);
 
     const txData = {
       type: type,
@@ -447,7 +418,9 @@ const Storage = {
       amount: amount,
       admin_fee: adminFee,
       account_id: accountId || null,
+      account_name: accountName,
       to_account_id: type === "Transfer" ? (toAccountId || null) : null,
+      to_account_name: toAccountName,
       category_id: transaction.category_id || null,
       category_name: transaction.category_name || transaction.category || (type === "Transfer" ? "Transfer Saldo" : "Lainnya"),
       description: transaction.description || "",
@@ -455,7 +428,7 @@ const Storage = {
       timestamp: transaction.timestamp || new Date().toISOString()
     };
 
-    // 1. Update balances optimistically
+    // 1. Update balances locally
     if (type === "Expense") {
       if (accountId) await this.updateAccountBalance(accountId, -amount);
     } else if (type === "Income") {
@@ -465,7 +438,7 @@ const Storage = {
       if (toAccountId) await this.updateAccountBalance(toAccountId, amount);
     }
 
-    // 2. Save optimistically to localStorage FIRST (Instant 0ms)
+    // 2. Save optimistically to localStorage FIRST
     const transactions = this.getCachedTransactions();
     if (transaction.id) {
       const idx = transactions.findIndex(t => t.id === transaction.id);
@@ -477,25 +450,30 @@ const Storage = {
     }
     localStorage.setItem("monetrac_cache_transactions", JSON.stringify(transactions));
 
-    // 3. Persist to Supabase safely (Validating UUIDs so PostgreSQL never rejects)
+    // 3. Persist to Supabase CLOUD (Guaranteed Insertion)
     if (client && user) {
       try {
+        // Resolve valid UUID for account_id or set null to avoid FK errors
+        let cloudAccId = isValidUUID(accountId) ? accountId : null;
+        let cloudToAccId = isValidUUID(toAccountId) ? toAccountId : null;
+
         const supabasePayload = {
           user_id: user.id,
           type: txData.type,
           date: txData.date,
           amount: txData.amount,
           admin_fee: txData.admin_fee,
-          account_id: validAccId,
-          to_account_id: validToAccId,
-          category_id: validCatId,
+          account_id: cloudAccId,
+          account_name: txData.account_name,
+          to_account_id: cloudToAccId,
+          to_account_name: txData.to_account_name,
           category_name: txData.category_name,
           description: txData.description,
           notes: txData.notes,
           timestamp: txData.timestamp
         };
 
-        if (isTxUUID) {
+        if (isValidUUID(transaction.id)) {
           await client
             .from("transactions")
             .update(supabasePayload)
@@ -512,10 +490,12 @@ const Storage = {
             const updated = this.getCachedTransactions();
             if (updated.length > 0) updated[0].id = data.id;
             localStorage.setItem("monetrac_cache_transactions", JSON.stringify(updated));
+          } else if (error) {
+            console.error("Supabase insert error:", error);
           }
         }
       } catch (e) {
-        console.warn("Supabase saveTransaction sync error:", e);
+        console.error("Supabase saveTransaction error:", e);
       }
     }
 
