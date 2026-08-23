@@ -23,7 +23,7 @@ async function renderSavings() {
   if (remEl) remEl.innerHTML = Utils.formatCurrency(totalRemaining);
   if (pctEl) pctEl.textContent = `${totalPercent}%`;
 
-  const grid = document.getElementById("savings-grid");
+  const grid = document.getElementById("savings-grid") || document.getElementById("goals-grid");
   if (!grid) return;
 
   if (!allSavingsGoals.length) {
