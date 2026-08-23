@@ -514,7 +514,14 @@ const Modal = {
       document.body.appendChild(modal);
     }
 
-    const currentCategories = Storage._categories || [];
+    const currentCategories = Storage._categories.length ? Storage._categories : [
+      { name: "Food & Beverage", type: "Expense" },
+      { name: "Transportation Exp", type: "Expense" },
+      { name: "Internet & Kuota", type: "Expense" },
+      { name: "Electricity / Listrik", type: "Expense" },
+      { name: "Shopping & Olshop", type: "Expense" },
+      { name: "Other Exp", type: "Expense" }
+    ];
     const expenseCategories = currentCategories.filter(c => c.type === "Expense");
     const currentBudgets = Storage._budgets || [];
     const budgetToEdit = budgetId ? currentBudgets.find(b => b.id === budgetId) : null;
@@ -540,7 +547,7 @@ const Modal = {
                   <option value="${c.name}" ${budgetToEdit && (budgetToEdit.category_name === c.name || budgetToEdit.category === c.name) ? 'selected' : ''}>
                     ${c.name}
                   </option>
-                `).join('') || '<option value="Makanan">Makanan</option><option value="Transportasi">Transportasi</option><option value="Belanja">Belanja</option>'}
+                `).join('') || '<option value="Food & Beverage">Food & Beverage</option><option value="Transportation Exp">Transportation Exp</option><option value="Shopping & Olshop">Shopping & Olshop</option>'}
               </select>
             </div>
 
@@ -580,6 +587,18 @@ const Modal = {
     });
 
     modal.classList.add("active");
+
+    // Refresh categories in background
+    Storage.getCategories().then(freshCats => {
+      const catSelect = document.getElementById("budget-category");
+      if (catSelect && freshCats.length > 0) {
+        const expCats = freshCats.filter(c => c.type === "Expense");
+        if (expCats.length > 0) {
+          const curVal = catSelect.value;
+          catSelect.innerHTML = expCats.map(c => `<option value="${c.name}" ${curVal === c.name ? 'selected' : ''}>${c.name}</option>`).join('');
+        }
+      }
+    }).catch(e => console.warn(e));
   },
 
   // --------------------------------------------------------------------------
