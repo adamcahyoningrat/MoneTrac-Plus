@@ -8,7 +8,7 @@ const Modal = {
   /**
    * Opens the Transaction Modal with INSTANT 0ms response and dynamic form states
    */
-  openTransactionModal(txToEdit = null) {
+  async openTransactionModal(txToEdit = null) {
     let modal = document.getElementById("universal-modal");
     if (!modal) {
       modal = document.createElement("div");
@@ -17,9 +17,11 @@ const Modal = {
       document.body.appendChild(modal);
     }
 
-    // 1. Instantly use cached accounts & categories (Zero Network Delay)
-    let accounts = Storage.getCachedAccounts();
-    let categories = Storage.getCachedCategories();
+    // Ambil data akun & kategori langsung dari Supabase Cloud
+    const [accounts, categories] = await Promise.all([
+      Storage.getAccounts(),
+      Storage.getCategories()
+    ]);
 
     this.activeTransactionType = txToEdit ? txToEdit.type : "Expense";
     const isEdit = !!txToEdit;
@@ -143,28 +145,7 @@ const Modal = {
     this.renderCategoryOptions(categories, txToEdit ? (txToEdit.category_name || txToEdit.category) : null);
     this.bindTransactionFormEvents(accounts, categories);
     
-    // INSTANTLY SHOW MODAL (0ms)
     modal.classList.add("active");
-
-    // Asynchronously refresh accounts/categories in background if fresh data arrives from Supabase
-    Promise.all([Storage.getAccounts(), Storage.getCategories()]).then(([freshAcc, freshCat]) => {
-      if (document.getElementById("universal-modal")?.classList.contains("active")) {
-        const accSelect = document.getElementById("tx-account");
-        const toAccSelect = document.getElementById("tx-to-account");
-        if (accSelect && freshAcc.length > 0) {
-          const currentVal = accSelect.value;
-          accSelect.innerHTML = freshAcc.map(a => `<option value="${a.id}" ${currentVal === a.id ? 'selected' : ''}>${a.name} (${Utils.formatCurrencyRaw(a.balance)})</option>`).join('');
-        }
-        if (toAccSelect && freshAcc.length > 0) {
-          const currentTo = toAccSelect.value;
-          toAccSelect.innerHTML = freshAcc.map(a => `<option value="${a.id}" ${currentTo === a.id ? 'selected' : ''}>${a.name} (${Utils.formatCurrencyRaw(a.balance)})</option>`).join('');
-        }
-        if (freshCat.length > 0) {
-          this.renderCategoryOptions(freshCat, txToEdit ? (txToEdit.category_name || txToEdit.category) : null);
-        }
-        this.updateTransferPreview(freshAcc);
-      }
-    }).catch(e => console.warn("Background modal data refresh:", e));
   },
 
   addQuickAmount(amount) {
@@ -413,10 +394,9 @@ const Modal = {
   /**
    * Open Savings Mutation Modal (Instant 0ms)
    */
-  openSavingsMutationModal(goalId, mutationType = "deposit") {
-    const goals = Storage.getCachedSavingsGoals();
+  async openSavingsMutationModal(goalId, mutationType = "deposit") {
+    const [goals, accounts] = await Promise.all([Storage.getSavingsGoals(), Storage.getAccounts()]);
     const goal = goals.find(g => g.id === goalId) || { id: goalId, name: "Tabungan", current_amount: 0, target_amount: 0 };
-    const accounts = Storage.getCachedAccounts();
 
     let modal = document.getElementById("universal-modal");
     if (!modal) {
