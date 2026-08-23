@@ -1,20 +1,26 @@
 /**
- * MONETRAC - PURE FULL CLOUD DATA ACCESS LAYER (100% SUPABASE POSTGRESQL)
- * --------------------------------------------------------------------------
- * Seluruh data (Akun, Kategori, Transaksi, Tabungan, Anggaran) dibaca & ditulis
- * langsung ke server Supabase Cloud secara real-time. Tidak ada penyimpanan lokal
- * yang tumpang tindih sehingga sinkronisasi antar perangkat 100% presisi.
- * --------------------------------------------------------------------------
+ * MONETRAC - PURE SUPABASE CLOUD ENGINE (BULLETPROOF CRUD)
  */
 
+function isValidUUID(str) {
+  if (!str || typeof str !== "string") return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str.trim());
+}
+
 const Storage = {
+  _accounts: [],
+  _categories: [],
+  _transactions: [],
+  _budgets: [],
+  _savings: [],
+
   // --------------------------------------------------------------------------
-  // 1. ACCOUNTS / DOMPET (PURE SUPABASE)
+  // ACCOUNTS
   // --------------------------------------------------------------------------
   async getAccounts() {
     const client = SupabaseConfig.getClient();
     const user = await Auth.getCurrentUser();
-    if (!client || !user) return [];
+    if (!client || !user) return this._accounts;
 
     try {
       const { data, error } = await client
@@ -25,28 +31,31 @@ const Storage = {
 
       if (error) throw error;
 
-      // Jika pengguna baru belum punya akun, auto-seed akun default di Supabase
       if (!data || data.length === 0) {
         const defaultAccs = [
           { user_id: user.id, name: "Cash / Tunai", type: "Cash", balance: 0, color: "#16a34a", icon: "money-bill" },
           { user_id: user.id, name: "Rekening Bank", type: "Bank", balance: 0, color: "#1f16a2", icon: "building-columns" },
           { user_id: user.id, name: "E-Wallet", type: "E-Wallet", balance: 0, color: "#1b93d0", icon: "wallet" }
         ];
-        const { data: inserted, error: insErr } = await client.from("accounts").insert(defaultAccs).select();
-        if (!insErr && inserted) return inserted;
+        const { data: inserted } = await client.from("accounts").insert(defaultAccs).select();
+        if (inserted) {
+          this._accounts = inserted;
+          return inserted;
+        }
       }
 
-      return data || [];
+      this._accounts = data || [];
+      return this._accounts;
     } catch (err) {
       console.error("Supabase getAccounts error:", err);
-      return [];
+      return this._accounts;
     }
   },
 
   async saveAccount(account) {
     const client = SupabaseConfig.getClient();
     const user = await Auth.getCurrentUser();
-    if (!client || !user) return { success: false, error: "Sesi pengguna tidak aktif." };
+    if (!client || !user) return { success: false, error: "Sesi tidak aktif." };
 
     try {
       const payload = {
@@ -59,18 +68,29 @@ const Storage = {
         updated_at: new Date().toISOString()
       };
 
-      if (account.id) {
-        payload.id = account.id;
+      let resData;
+      if (account.id && isValidUUID(account.id)) {
+        const { data, error } = await client
+          .from("accounts")
+          .update(payload)
+          .eq("id", account.id)
+          .eq("user_id", user.id)
+          .select()
+          .single();
+        if (error) throw error;
+        resData = data;
+      } else {
+        const { data, error } = await client
+          .from("accounts")
+          .insert(payload)
+          .select()
+          .single();
+        if (error) throw error;
+        resData = data;
       }
 
-      const { data, error } = await client
-        .from("accounts")
-        .upsert(payload, { onConflict: "id" })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return { success: true, data };
+      await this.getAccounts();
+      return { success: true, data: resData };
     } catch (err) {
       console.error("Supabase saveAccount error:", err);
       return { success: false, error: err.message };
@@ -90,6 +110,7 @@ const Storage = {
         .eq("user_id", user.id);
 
       if (error) throw error;
+      await this.getAccounts();
       return { success: true };
     } catch (err) {
       console.error("Supabase deleteAccount error:", err);
@@ -103,7 +124,6 @@ const Storage = {
     if (!client || !user || !accountId) return;
 
     try {
-      // Ambil saldo aktual langsung dari Supabase
       const { data: acc, error } = await client
         .from("accounts")
         .select("balance")
@@ -125,12 +145,12 @@ const Storage = {
   },
 
   // --------------------------------------------------------------------------
-  // 2. CATEGORIES (PURE SUPABASE)
+  // CATEGORIES
   // --------------------------------------------------------------------------
   async getCategories() {
     const client = SupabaseConfig.getClient();
     const user = await Auth.getCurrentUser();
-    if (!client || !user) return [];
+    if (!client || !user) return this._categories;
 
     try {
       const { data, error } = await client
@@ -141,7 +161,6 @@ const Storage = {
 
       if (error) throw error;
 
-      // Auto-seed default kategori di Supabase jika kosong
       if (!data || data.length === 0) {
         const defaultCats = [
           { user_id: user.id, name: "Salary / Gaji", type: "Income", color: "#2563eb", icon: "briefcase" },
@@ -155,14 +174,18 @@ const Storage = {
           { user_id: user.id, name: "Shopping & Olshop", type: "Expense", color: "#8b5cf6", icon: "cart-shopping" },
           { user_id: user.id, name: "Other Exp", type: "Expense", color: "#eb5f24", icon: "boxes-stacked" }
         ];
-        const { data: inserted, error: insErr } = await client.from("categories").insert(defaultCats).select();
-        if (!insErr && inserted) return inserted;
+        const { data: inserted } = await client.from("categories").insert(defaultCats).select();
+        if (inserted) {
+          this._categories = inserted;
+          return inserted;
+        }
       }
 
-      return data || [];
+      this._categories = data || [];
+      return this._categories;
     } catch (err) {
       console.error("Supabase getCategories error:", err);
-      return [];
+      return this._categories;
     }
   },
 
@@ -180,18 +203,29 @@ const Storage = {
         icon: category.icon || "tag"
       };
 
-      if (category.id) {
-        payload.id = category.id;
+      let resData;
+      if (category.id && isValidUUID(category.id)) {
+        const { data, error } = await client
+          .from("categories")
+          .update(payload)
+          .eq("id", category.id)
+          .eq("user_id", user.id)
+          .select()
+          .single();
+        if (error) throw error;
+        resData = data;
+      } else {
+        const { data, error } = await client
+          .from("categories")
+          .insert(payload)
+          .select()
+          .single();
+        if (error) throw error;
+        resData = data;
       }
 
-      const { data, error } = await client
-        .from("categories")
-        .upsert(payload, { onConflict: "id" })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return { success: true, data };
+      await this.getCategories();
+      return { success: true, data: resData };
     } catch (err) {
       console.error("Supabase saveCategory error:", err);
       return { success: false, error: err.message };
@@ -211,6 +245,7 @@ const Storage = {
         .eq("user_id", user.id);
 
       if (error) throw error;
+      await this.getCategories();
       return { success: true };
     } catch (err) {
       console.error("Supabase deleteCategory error:", err);
@@ -219,12 +254,12 @@ const Storage = {
   },
 
   // --------------------------------------------------------------------------
-  // 3. TRANSACTIONS (PURE SUPABASE)
+  // TRANSACTIONS
   // --------------------------------------------------------------------------
   async getTransactions(filters = {}) {
     const client = SupabaseConfig.getClient();
     const user = await Auth.getCurrentUser();
-    if (!client || !user) return [];
+    if (!client || !user) return this._transactions;
 
     try {
       let query = client
@@ -246,10 +281,11 @@ const Storage = {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data || [];
+      this._transactions = data || [];
+      return this._transactions;
     } catch (err) {
       console.error("Supabase getTransactions error:", err);
-      return [];
+      return this._transactions;
     }
   },
 
@@ -261,8 +297,8 @@ const Storage = {
     const amount = Number(transaction.amount) || 0;
     const adminFee = Number(transaction.admin_fee) || 0;
     const type = transaction.type;
-    const accountId = transaction.account_id || transaction.account || null;
-    const toAccountId = transaction.to_account_id || transaction.toAccount || null;
+    const accountId = isValidUUID(transaction.account_id) ? transaction.account_id : (isValidUUID(transaction.account) ? transaction.account : null);
+    const toAccountId = isValidUUID(transaction.to_account_id) ? transaction.to_account_id : (isValidUUID(transaction.toAccount) ? transaction.toAccount : null);
     const rawDate = transaction.date ? transaction.date.substring(0, 10) : new Date().toISOString().split("T")[0];
 
     try {
@@ -276,7 +312,7 @@ const Storage = {
         if (toAccountId) await this.updateAccountBalance(toAccountId, amount);
       }
 
-      // 2. Simpan Transaksi Langsung ke Supabase
+      // 2. Simpan Transaksi Langsung ke Supabase (INSERT / UPDATE)
       const payload = {
         user_id: user.id,
         type: type,
@@ -285,25 +321,36 @@ const Storage = {
         admin_fee: adminFee,
         account_id: accountId,
         to_account_id: type === "Transfer" ? toAccountId : null,
-        category_id: transaction.category_id || null,
+        category_id: isValidUUID(transaction.category_id) ? transaction.category_id : null,
         category_name: transaction.category_name || transaction.category || (type === "Transfer" ? "Transfer Saldo" : "Lainnya"),
         description: transaction.description || "",
         notes: transaction.notes || "",
         timestamp: transaction.timestamp || new Date().toISOString()
       };
 
-      if (transaction.id) {
-        payload.id = transaction.id;
+      let resData;
+      if (transaction.id && isValidUUID(transaction.id)) {
+        const { data, error } = await client
+          .from("transactions")
+          .update(payload)
+          .eq("id", transaction.id)
+          .eq("user_id", user.id)
+          .select()
+          .single();
+        if (error) throw error;
+        resData = data;
+      } else {
+        const { data, error } = await client
+          .from("transactions")
+          .insert(payload)
+          .select()
+          .single();
+        if (error) throw error;
+        resData = data;
       }
 
-      const { data, error } = await client
-        .from("transactions")
-        .upsert(payload, { onConflict: "id" })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return { success: true, data };
+      await this.getTransactions();
+      return { success: true, data: resData };
     } catch (err) {
       console.error("Supabase saveTransaction error:", err);
       return { success: false, error: err.message };
@@ -316,15 +363,14 @@ const Storage = {
     if (!client || !user || !txId) return { success: false, error: "Sesi tidak aktif." };
 
     try {
-      // 1. Ambil data transaksi untuk mengembalikan saldo (Reversal)
-      const { data: tx, error: fetchErr } = await client
+      const { data: tx } = await client
         .from("transactions")
         .select("*")
         .eq("id", txId)
         .eq("user_id", user.id)
         .single();
 
-      if (!fetchErr && tx) {
+      if (tx) {
         const amount = Number(tx.amount) || 0;
         const adminFee = Number(tx.admin_fee) || 0;
         if (tx.type === "Expense" && tx.account_id) {
@@ -337,7 +383,6 @@ const Storage = {
         }
       }
 
-      // 2. Hapus dari Supabase
       const { error: delErr } = await client
         .from("transactions")
         .delete()
@@ -345,6 +390,7 @@ const Storage = {
         .eq("user_id", user.id);
 
       if (delErr) throw delErr;
+      await this.getTransactions();
       return { success: true };
     } catch (err) {
       console.error("Supabase deleteTransaction error:", err);
@@ -353,12 +399,12 @@ const Storage = {
   },
 
   // --------------------------------------------------------------------------
-  // 4. SAVINGS GOALS (PURE SUPABASE)
+  // SAVINGS GOALS
   // --------------------------------------------------------------------------
   async getSavingsGoals() {
     const client = SupabaseConfig.getClient();
     const user = await Auth.getCurrentUser();
-    if (!client || !user) return [];
+    if (!client || !user) return this._savings;
 
     try {
       const { data, error } = await client
@@ -368,10 +414,11 @@ const Storage = {
         .order("created_at", { ascending: true });
 
       if (error) throw error;
-      return data || [];
+      this._savings = data || [];
+      return this._savings;
     } catch (err) {
       console.error("Supabase getSavingsGoals error:", err);
-      return [];
+      return this._savings;
     }
   },
 
@@ -387,7 +434,7 @@ const Storage = {
         target_amount: Number(goal.target_amount) || 0,
         current_amount: Number(goal.current_amount) || 0,
         target_date: goal.target_date || null,
-        account_id: goal.account_id || null,
+        account_id: isValidUUID(goal.account_id) ? goal.account_id : null,
         color: goal.color || "#0891b2",
         icon: goal.icon || "piggy-bank",
         notes: goal.notes || "",
@@ -395,18 +442,29 @@ const Storage = {
         updated_at: new Date().toISOString()
       };
 
-      if (goal.id) {
-        payload.id = goal.id;
+      let resData;
+      if (goal.id && isValidUUID(goal.id)) {
+        const { data, error } = await client
+          .from("savings_goals")
+          .update(payload)
+          .eq("id", goal.id)
+          .eq("user_id", user.id)
+          .select()
+          .single();
+        if (error) throw error;
+        resData = data;
+      } else {
+        const { data, error } = await client
+          .from("savings_goals")
+          .insert(payload)
+          .select()
+          .single();
+        if (error) throw error;
+        resData = data;
       }
 
-      const { data, error } = await client
-        .from("savings_goals")
-        .upsert(payload, { onConflict: "id" })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return { success: true, data };
+      await this.getSavingsGoals();
+      return { success: true, data: resData };
     } catch (err) {
       console.error("Supabase saveSavingsGoal error:", err);
       return { success: false, error: err.message };
@@ -426,6 +484,7 @@ const Storage = {
         .eq("user_id", user.id);
 
       if (error) throw error;
+      await this.getSavingsGoals();
       return { success: true };
     } catch (err) {
       console.error("Supabase deleteSavingsGoal error:", err);
@@ -442,7 +501,6 @@ const Storage = {
     if (amt <= 0) return { success: false, error: "Nominal harus lebih besar dari 0" };
 
     try {
-      // 1. Ambil data target tabungan langsung dari Supabase
       const { data: goal, error: gErr } = await client
         .from("savings_goals")
         .select("*")
@@ -465,7 +523,6 @@ const Storage = {
         if (accountId) await this.updateAccountBalance(accountId, amt);
       }
 
-      // 2. Update status & jumlah di Supabase
       const newStatus = newGoalAmount >= Number(goal.target_amount) ? "completed" : "in_progress";
       await client
         .from("savings_goals")
@@ -473,18 +530,16 @@ const Storage = {
         .eq("id", goalId)
         .eq("user_id", user.id);
 
-      // 3. Catat mutasi di Supabase savings_transactions
       await client.from("savings_transactions").insert({
         user_id: user.id,
         goal_id: goalId,
         type: type,
         amount: amt,
-        account_id: accountId || null,
+        account_id: isValidUUID(accountId) ? accountId : null,
         date: date || new Date().toISOString().split("T")[0],
         notes: notes || ""
       });
 
-      // 4. Catat transaksi transfer pendukung
       await this.saveTransaction({
         type: "Transfer",
         date: date || new Date().toISOString().split("T")[0],
@@ -503,12 +558,12 @@ const Storage = {
   },
 
   // --------------------------------------------------------------------------
-  // 5. BUDGETS (PURE SUPABASE)
+  // BUDGETS
   // --------------------------------------------------------------------------
   async getBudgets() {
     const client = SupabaseConfig.getClient();
     const user = await Auth.getCurrentUser();
-    if (!client || !user) return [];
+    if (!client || !user) return this._budgets;
 
     try {
       const { data, error } = await client
@@ -517,10 +572,11 @@ const Storage = {
         .eq("user_id", user.id);
 
       if (error) throw error;
-      return data || [];
+      this._budgets = data || [];
+      return this._budgets;
     } catch (err) {
       console.error("Supabase getBudgets error:", err);
-      return [];
+      return this._budgets;
     }
   },
 
@@ -533,23 +589,34 @@ const Storage = {
       const payload = {
         user_id: user.id,
         category_name: budget.category_name || budget.category,
-        category_id: budget.category_id || null,
+        category_id: isValidUUID(budget.category_id) ? budget.category_id : null,
         amount: Number(budget.amount) || 0,
         month: budget.month || null
       };
 
-      if (budget.id) {
-        payload.id = budget.id;
+      let resData;
+      if (budget.id && isValidUUID(budget.id)) {
+        const { data, error } = await client
+          .from("budgets")
+          .update(payload)
+          .eq("id", budget.id)
+          .eq("user_id", user.id)
+          .select()
+          .single();
+        if (error) throw error;
+        resData = data;
+      } else {
+        const { data, error } = await client
+          .from("budgets")
+          .insert(payload)
+          .select()
+          .single();
+        if (error) throw error;
+        resData = data;
       }
 
-      const { data, error } = await client
-        .from("budgets")
-        .upsert(payload, { onConflict: "id" })
-        .select()
-        .single();
-
-      if (error) throw error;
-      return { success: true, data };
+      await this.getBudgets();
+      return { success: true, data: resData };
     } catch (err) {
       console.error("Supabase saveBudget error:", err);
       return { success: false, error: err.message };
@@ -569,107 +636,11 @@ const Storage = {
         .eq("user_id", user.id);
 
       if (error) throw error;
+      await this.getBudgets();
       return { success: true };
     } catch (err) {
       console.error("Supabase deleteBudget error:", err);
       return { success: false, error: err.message };
     }
-  },
-
-  // --------------------------------------------------------------------------
-  // 6. MIGRATION & BACKUP (DIRECT TO SUPABASE)
-  // --------------------------------------------------------------------------
-  async importFromGSheetData(rawJson) {
-    try {
-      const data = typeof rawJson === "string" ? JSON.parse(rawJson) : rawJson;
-
-      let importedAcc = 0;
-      let importedCat = 0;
-      let importedTx = 0;
-      let importedBg = 0;
-
-      if (data.myfinance_categories && Array.isArray(data.myfinance_categories)) {
-        for (const cat of data.myfinance_categories) {
-          await this.saveCategory({
-            name: cat.name,
-            type: cat.type,
-            color: cat.color,
-            icon: cat.icon
-          });
-          importedCat++;
-        }
-      }
-
-      const accountMap = {};
-      if (data.myfinance_accounts && Array.isArray(data.myfinance_accounts)) {
-        for (const acc of data.myfinance_accounts) {
-          const res = await this.saveAccount({
-            name: acc.name,
-            type: acc.type,
-            balance: acc.balance,
-            color: acc.color,
-            icon: acc.icon
-          });
-          if (res.success && res.data) {
-            accountMap[acc.id] = res.data.id;
-          }
-          importedAcc++;
-        }
-      }
-
-      if (data.myfinance_budgets && Array.isArray(data.myfinance_budgets)) {
-        for (const bg of data.myfinance_budgets) {
-          await this.saveBudget({
-            category_name: bg.category,
-            amount: bg.amount
-          });
-          importedBg++;
-        }
-      }
-
-      if (data.myfinance_transactions && Array.isArray(data.myfinance_transactions)) {
-        for (const tx of data.myfinance_transactions) {
-          const txDate = tx.date ? tx.date.split("T")[0] : new Date().toISOString().split("T")[0];
-          await this.saveTransaction({
-            type: tx.type,
-            date: txDate,
-            amount: Number(tx.amount) || 0,
-            admin_fee: 0,
-            account_id: accountMap[tx.account] || null,
-            to_account_id: accountMap[tx.toAccount] || null,
-            category_name: tx.category || (tx.type === "Transfer" ? "Transfer" : "Lainnya"),
-            description: tx.description || "",
-            timestamp: tx.timestamp || new Date().toISOString()
-          });
-          importedTx++;
-        }
-      }
-
-      return {
-        success: true,
-        message: `Migrasi Cloud Berhasil! Diimpor: ${importedAcc} Akun, ${importedCat} Kategori, ${importedTx} Transaksi, ${importedBg} Anggaran.`
-      };
-    } catch (e) {
-      console.error("Migration error:", e);
-      return { success: false, error: e.message };
-    }
-  },
-
-  async exportAllData() {
-    const accounts = await this.getAccounts();
-    const categories = await this.getCategories();
-    const transactions = await this.getTransactions();
-    const budgets = await this.getBudgets();
-    const savings = await this.getSavingsGoals();
-
-    return {
-      export_date: new Date().toISOString(),
-      version: "2.0.0-pure-cloud",
-      myfinance_accounts: accounts,
-      myfinance_categories: categories,
-      myfinance_transactions: transactions,
-      myfinance_budgets: budgets,
-      myfinance_savings: savings
-    };
   }
 };
