@@ -2,10 +2,13 @@
  * MONETRAC - BUDGET MANAGEMENT PAGE LOGIC
  */
 
+let allBudgets = [];
+
 async function renderBudget() {
   const budgets = await Storage.getBudgets();
   const categories = await Storage.getCategories();
   const transactions = await Storage.getTransactions();
+  allBudgets = budgets || [];
 
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -24,7 +27,7 @@ async function renderBudget() {
     }
   });
 
-  totalBudget = budgets.reduce((acc, b) => acc + (Number(b.amount) || 0), 0);
+  totalBudget = allBudgets.reduce((acc, b) => acc + (Number(b.amount) || 0), 0);
   const remainingBudget = Math.max(0, totalBudget - totalSpent);
   const overallPercent = totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0;
 
@@ -41,13 +44,13 @@ async function renderBudget() {
   const listContainer = document.getElementById("budget-list");
   if (!listContainer) return;
 
-  if (!budgets.length) {
+  if (!allBudgets.length) {
     listContainer.innerHTML = `
       <div class="empty-state">
         <div class="empty-icon"><i class="fa-solid fa-chart-simple"></i></div>
         <div class="empty-title">Belum Ada Anggaran Kategori</div>
         <div class="empty-desc">Buat batas pengeluaran bulanan per kategori agar keuangan tetap terkontrol.</div>
-        <button class="btn btn-primary" onclick="openBudgetModal()" style="margin-top:12px;">
+        <button class="btn btn-primary" onclick="Modal.openBudgetModal()" style="margin-top:12px;">
           <i class="fa-solid fa-plus"></i> Buat Anggaran Baru
         </button>
       </div>
@@ -55,7 +58,7 @@ async function renderBudget() {
     return;
   }
 
-  listContainer.innerHTML = budgets.map(b => {
+  listContainer.innerHTML = allBudgets.map(b => {
     const catName = b.category_name || b.category;
     const spent = categorySpending[catName] || 0;
     const limit = Number(b.amount) || 1;
@@ -71,7 +74,7 @@ async function renderBudget() {
             ${isOver ? `<span class="badge badge-expense"><i class="fa-solid fa-triangle-exclamation"></i> Overbudget (+${Utils.formatCurrency(spent - limit)})</span>` : ''}
           </div>
           <div style="display:flex;gap:4px;">
-            <button class="btn btn-secondary btn-icon btn-sm" onclick="openBudgetModal('${b.id}')" title="Edit">
+            <button class="btn btn-secondary btn-icon btn-sm" onclick="Modal.openBudgetModal('${b.id}')" title="Edit">
               <i class="fa-solid fa-pen"></i>
             </button>
             <button class="btn btn-danger btn-icon btn-sm" onclick="deleteBudget('${b.id}')" title="Hapus">
@@ -99,83 +102,6 @@ async function renderBudget() {
   }).join('');
 }
 
-function openBudgetModal(budgetId = null) {
-  const categories = Storage.getCachedCategories();
-  const expenseCategories = categories.filter(c => c.type === "Expense");
-  const budgets = Storage.getCachedBudgets();
-  const budgetToEdit = budgetId ? budgets.find(b => b.id === budgetId) : null;
-
-  let modal = document.getElementById("universal-modal");
-  if (!modal) {
-    modal = document.createElement("div");
-    modal.id = "universal-modal";
-    modal.className = "modal-overlay";
-    document.body.appendChild(modal);
-  }
-
-  modal.innerHTML = `
-    <div class="modal-container">
-      <div class="modal-header">
-        <div class="modal-title">
-          <i class="fa-solid fa-chart-simple" style="color:var(--primary)"></i>
-          <span>${budgetToEdit ? 'Edit Anggaran' : 'Atur Anggaran Bulanan'}</span>
-        </div>
-        <button class="modal-close" onclick="Modal.close()">&times;</button>
-      </div>
-
-      <form id="budget-form" class="modal-form-wrapper">
-        <div class="modal-body">
-          <input type="hidden" id="budget-id" value="${budgetToEdit ? budgetToEdit.id : ''}">
-
-          <div class="form-group">
-            <label class="form-label">Kategori Pengeluaran *</label>
-            <select id="budget-category" class="form-control" required>
-              ${expenseCategories.map(c => `
-                <option value="${c.name}" ${budgetToEdit && (budgetToEdit.category_name === c.name || budgetToEdit.category === c.name) ? 'selected' : ''}>
-                  ${c.name}
-                </option>
-              `).join('')}
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Batas Anggaran Bulanan (Rp) *</label>
-            <input type="number" id="budget-amount" class="form-control" placeholder="0" value="${budgetToEdit ? budgetToEdit.amount : ''}" required min="1000" style="font-size:1.2rem;font-weight:700;">
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="Modal.close()">Batal</button>
-          <button type="submit" class="btn btn-primary">Simpan Anggaran</button>
-        </div>
-      </form>
-    </div>
-  `;
-
-  document.getElementById("budget-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const id = document.getElementById("budget-id").value;
-    const catName = document.getElementById("budget-category").value;
-    const amount = Number(document.getElementById("budget-amount").value);
-
-    const res = await Storage.saveBudget({
-      id: id || undefined,
-      category_name: catName,
-      amount
-    });
-
-    Modal.close();
-    if (res.success) {
-      Utils.showToast("Anggaran berhasil disimpan!", "success");
-      renderBudget();
-    } else {
-      Utils.showToast("Gagal menyimpan: " + res.error, "error");
-    }
-  });
-
-  modal.classList.add("active");
-}
-
 async function deleteBudget(id) {
   if (confirm("Apakah Anda yakin ingin menghapus anggaran kategori ini?")) {
     const res = await Storage.deleteBudget(id);
@@ -190,5 +116,3 @@ async function deleteBudget(id) {
 
 window.renderBudget = renderBudget;
 window.onPrivacyChanged = () => renderBudget();
-Modal.openBudgetModal = openBudgetModal;
-window.openBudgetModal = openBudgetModal;
