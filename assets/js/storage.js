@@ -8,6 +8,7 @@ function isValidUUID(str) {
 }
 
 const Storage = {
+  // In-Memory Fast Cache for instant modal rendering
   _accounts: [],
   _categories: [],
   _transactions: [],
@@ -20,7 +21,7 @@ const Storage = {
   async getAccounts() {
     const client = SupabaseConfig.getClient();
     const user = await Auth.getCurrentUser();
-    if (!client || !user) return this._accounts;
+    if (!client || !user) return this._accounts.length ? this._accounts : [];
 
     try {
       const { data, error } = await client
@@ -150,7 +151,7 @@ const Storage = {
   async getCategories() {
     const client = SupabaseConfig.getClient();
     const user = await Auth.getCurrentUser();
-    if (!client || !user) return this._categories;
+    if (!client || !user) return this._categories.length ? this._categories : [];
 
     try {
       const { data, error } = await client
@@ -259,7 +260,7 @@ const Storage = {
   async getTransactions(filters = {}) {
     const client = SupabaseConfig.getClient();
     const user = await Auth.getCurrentUser();
-    if (!client || !user) return this._transactions;
+    if (!client || !user) return this._transactions.length ? this._transactions : [];
 
     try {
       let query = client
@@ -312,7 +313,7 @@ const Storage = {
         if (toAccountId) await this.updateAccountBalance(toAccountId, amount);
       }
 
-      // 2. Simpan Transaksi Langsung ke Supabase (INSERT / UPDATE)
+      // 2. Simpan Transaksi Langsung ke Supabase (INSERT untuk baru, UPDATE untuk edit)
       const payload = {
         user_id: user.id,
         type: type,
@@ -404,7 +405,7 @@ const Storage = {
   async getSavingsGoals() {
     const client = SupabaseConfig.getClient();
     const user = await Auth.getCurrentUser();
-    if (!client || !user) return this._savings;
+    if (!client || !user) return this._savings.length ? this._savings : [];
 
     try {
       const { data, error } = await client
@@ -563,7 +564,7 @@ const Storage = {
   async getBudgets() {
     const client = SupabaseConfig.getClient();
     const user = await Auth.getCurrentUser();
-    if (!client || !user) return this._budgets;
+    if (!client || !user) return this._budgets.length ? this._budgets : [];
 
     try {
       const { data, error } = await client
