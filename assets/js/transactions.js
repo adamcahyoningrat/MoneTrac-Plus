@@ -9,32 +9,42 @@ let currentPage = 1;
 const itemsPerPage = 15;
 
 async function renderTransactions() {
-  allAccounts = await Storage.getAccounts();
-  allCategories = await Storage.getCategories();
-  allTransactions = await Storage.getTransactions();
+  try {
+    const [accs, cats, txs] = await Promise.all([
+      Storage.getAccounts(),
+      Storage.getCategories(),
+      Storage.getTransactions()
+    ]);
+    allAccounts = accs || [];
+    allCategories = cats || [];
+    allTransactions = txs || [];
 
-  // Populate Filter Dropdowns safely
-  const accFilter = document.getElementById("filter-account");
-  if (accFilter && accFilter.options.length <= 1) {
-    allAccounts.forEach(a => {
-      const opt = document.createElement("option");
-      opt.value = a.id;
-      opt.textContent = a.name;
-      accFilter.appendChild(opt);
-    });
+    // Populate Filter Dropdowns safely
+    const accFilter = document.getElementById("filter-account");
+    if (accFilter && accFilter.options.length <= 1) {
+      allAccounts.forEach(a => {
+        const opt = document.createElement("option");
+        opt.value = a.id;
+        opt.textContent = a.name;
+        accFilter.appendChild(opt);
+      });
+    }
+
+    const catFilter = document.getElementById("filter-category");
+    if (catFilter && catFilter.options.length <= 1) {
+      allCategories.forEach(c => {
+        const opt = document.createElement("option");
+        opt.value = c.name;
+        opt.textContent = c.name;
+        catFilter.appendChild(opt);
+      });
+    }
+
+    applyFiltersAndRender();
+  } catch (err) {
+    console.error("renderTransactions error:", err);
+    applyFiltersAndRender();
   }
-
-  const catFilter = document.getElementById("filter-category");
-  if (catFilter && catFilter.options.length <= 1) {
-    allCategories.forEach(c => {
-      const opt = document.createElement("option");
-      opt.value = c.name;
-      opt.textContent = c.name;
-      catFilter.appendChild(opt);
-    });
-  }
-
-  applyFiltersAndRender();
 }
 
 function applyFiltersAndRender(accounts = null) {
@@ -42,7 +52,7 @@ function applyFiltersAndRender(accounts = null) {
     allAccounts = accounts;
   }
   if (!allAccounts || allAccounts.length === 0) {
-    allAccounts = Storage.getCachedAccounts();
+    allAccounts = Storage._accounts || [];
   }
 
   const search = (document.getElementById("search-tx")?.value || "").toLowerCase();
