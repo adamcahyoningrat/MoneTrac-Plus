@@ -5,9 +5,6 @@
 const Modal = {
   activeTransactionType: "Expense",
 
-  /**
-   * Opens the Transaction Modal with INSTANT 0ms response and dynamic form states
-   */
   async openTransactionModal(txToEdit = null) {
     let modal = document.getElementById("universal-modal");
     if (!modal) {
@@ -17,11 +14,8 @@ const Modal = {
       document.body.appendChild(modal);
     }
 
-    // Ambil data akun & kategori langsung dari Supabase Cloud
-    const [accounts, categories] = await Promise.all([
-      Storage.getAccounts(),
-      Storage.getCategories()
-    ]);
+    const accounts = await Storage.getAccounts();
+    const categories = await Storage.getCategories();
 
     this.activeTransactionType = txToEdit ? txToEdit.type : "Expense";
     const isEdit = !!txToEdit;
@@ -144,7 +138,6 @@ const Modal = {
 
     this.renderCategoryOptions(categories, txToEdit ? (txToEdit.category_name || txToEdit.category) : null);
     this.bindTransactionFormEvents(accounts, categories);
-    
     modal.classList.add("active");
   },
 
@@ -279,10 +272,7 @@ const Modal = {
     });
   },
 
-  /**
-   * Open Savings Goal Modal (Instant 0ms)
-   */
-  openSavingsGoalModal(goalToEdit = null) {
+  async openSavingsGoalModal(goalToEdit = null) {
     let modal = document.getElementById("universal-modal");
     if (!modal) {
       modal = document.createElement("div");
@@ -391,13 +381,7 @@ const Modal = {
     modal.classList.add("active");
   },
 
-  /**
-   * Open Savings Mutation Modal (Instant 0ms)
-   */
   async openSavingsMutationModal(goalId, mutationType = "deposit") {
-    const [goals, accounts] = await Promise.all([Storage.getSavingsGoals(), Storage.getAccounts()]);
-    const goal = goals.find(g => g.id === goalId) || { id: goalId, name: "Tabungan", current_amount: 0, target_amount: 0 };
-
     let modal = document.getElementById("universal-modal");
     if (!modal) {
       modal = document.createElement("div");
@@ -406,6 +390,8 @@ const Modal = {
       document.body.appendChild(modal);
     }
 
+    const [goals, accounts] = await Promise.all([Storage.getSavingsGoals(), Storage.getAccounts()]);
+    const goal = goals.find(g => g.id === goalId) || { id: goalId, name: "Tabungan", current_amount: 0, target_amount: 0 };
     const isDeposit = mutationType === "deposit";
 
     modal.innerHTML = `
@@ -492,9 +478,6 @@ const Modal = {
     modal.classList.add("active");
   },
 
-  /**
-   * Close any active modal
-   */
   close() {
     const modal = document.getElementById("universal-modal");
     if (modal) {
@@ -502,6 +485,7 @@ const Modal = {
     }
   }
 };
+
 window.openTransactionModal = (tx) => Modal.openTransactionModal(tx);
 window.openSavingsGoalModal = (g) => Modal.openSavingsGoalModal(g);
 window.openSavingsMutationModal = (id, type) => Modal.openSavingsMutationModal(id, type);
