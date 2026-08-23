@@ -1,5 +1,5 @@
 /**
- * MONETRAC - GLOBAL APP STATE & CONTROLLER
+ * MONETRAC - GLOBAL APP CONTROLLER (INSTANT RENDERING)
  */
 
 const AppState = {
@@ -41,25 +41,26 @@ const AppState = {
       }
     }
 
-    // Refresh UI if page has custom renderers
     if (window.onPrivacyChanged) {
       window.onPrivacyChanged(isActive);
     }
   },
 
   async init(pageId, pageTitle, pageSubtitle) {
-    // 1. Check Authentication
+    // 1. Render Theme & Privacy Instantly (0ms)
+    this.setTheme(this.getTheme());
+    this.setPrivacyMode(this.getPrivacyMode());
+
+    // 2. Render Sidebar & Navbar Instantly (Never disappears!)
+    Sidebar.render(pageId);
+    Navbar.render(pageTitle, pageSubtitle);
+
+    // 3. Authenticate
     const user = await Auth.requireAuth();
     if (!user) return;
 
-    // 2. Initialize Theme
-    this.setTheme(this.getTheme());
-
-    // 3. Initialize Privacy
-    this.setPrivacyMode(this.getPrivacyMode());
-
-    // 4. Render Components
-    Sidebar.render(pageId);
-    Navbar.render(pageTitle, pageSubtitle);
+    // 4. Update user info on sidebar & navbar
+    Sidebar.updateUserCard();
+    Navbar.updateUserInfo();
   }
 };
