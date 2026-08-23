@@ -2,20 +2,37 @@
  * MONETRAC - ACCOUNTS PAGE LOGIC
  */
 
+let allAccounts = [];
+
 async function renderAccounts() {
   const accounts = await Storage.getAccounts();
   const transactions = await Storage.getTransactions();
+  allAccounts = accounts || [];
 
-  const totalNetWorth = accounts.reduce((acc, a) => acc + (Number(a.balance) || 0), 0);
+  const totalNetWorth = allAccounts.reduce((acc, a) => acc + (Number(a.balance) || 0), 0);
   const networthEl = document.getElementById("accounts-total-networth");
   const countEl = document.getElementById("accounts-count");
   if (networthEl) networthEl.innerHTML = Utils.formatCurrency(totalNetWorth);
-  if (countEl) countEl.textContent = `${accounts.length} Akun Terdaftar`;
+  if (countEl) countEl.textContent = `${allAccounts.length} Akun Terdaftar`;
 
   const grid = document.getElementById("accounts-grid");
   if (!grid) return;
 
-  grid.innerHTML = accounts.map(a => {
+  if (!allAccounts.length) {
+    grid.innerHTML = `
+      <div class="empty-state" style="grid-column: 1 / -1;">
+        <div class="empty-icon"><i class="fa-solid fa-wallet"></i></div>
+        <div class="empty-title">Belum Ada Akun / Dompet</div>
+        <div class="empty-desc">Tambahkan rekening bank, uang tunai, atau dompet digital Anda.</div>
+        <button class="btn btn-primary" onclick="Modal.openAccountModal()" style="margin-top:12px;">
+          <i class="fa-solid fa-plus"></i> Tambah Akun Baru
+        </button>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = allAccounts.map(a => {
     const txCount = transactions.filter(t => t.account_id === a.id || t.to_account_id === a.id || t.account === a.id || t.toAccount === a.id).length;
 
     return `
@@ -32,7 +49,7 @@ async function renderAccounts() {
             </div>
           </div>
           <div style="display:flex;gap:4px;">
-            <button class="btn btn-secondary btn-icon btn-sm" onclick="openAccountModal('${a.id}')" title="Edit Akun">
+            <button class="btn btn-secondary btn-icon btn-sm" onclick="Modal.openAccountModal('${a.id}')" title="Edit Akun">
               <i class="fa-solid fa-pen"></i>
             </button>
             <button class="btn btn-danger btn-icon btn-sm" onclick="deleteAccount('${a.id}')" title="Hapus Akun">
@@ -50,113 +67,13 @@ async function renderAccounts() {
 
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:12px;border-top:1px solid var(--border-color);font-size:0.82rem;color:var(--text-muted);">
           <span>${txCount} Transaksi tercatat</span>
-          <button class="btn btn-secondary btn-sm" onclick="Modal.openTransactionModal()" title="Tambah Transaksi">
+          <button class="btn btn-secondary btn-sm" onclick="Modal.openTransactionModal({account_id:'${a.id}'})" title="Tambah Transaksi">
             <i class="fa-solid fa-plus"></i> Transaksi
           </button>
         </div>
       </div>
     `;
   }).join('');
-}
-
-function openAccountModal(accId = null) {
-  const accounts = Storage.getCachedAccounts();
-  const accToEdit = accId ? accounts.find(a => a.id === accId) : null;
-
-  let modal = document.getElementById("universal-modal");
-  if (!modal) {
-    modal = document.createElement("div");
-    modal.id = "universal-modal";
-    modal.className = "modal-overlay";
-    document.body.appendChild(modal);
-  }
-
-  modal.innerHTML = `
-    <div class="modal-container">
-      <div class="modal-header">
-        <div class="modal-title">
-          <i class="fa-solid fa-wallet" style="color:var(--primary)"></i>
-          <span>${accToEdit ? 'Edit Akun / Dompet' : 'Tambah Akun Baru'}</span>
-        </div>
-        <button class="modal-close" onclick="Modal.close()">&times;</button>
-      </div>
-
-      <form id="account-form" class="modal-form-wrapper">
-        <div class="modal-body">
-          <input type="hidden" id="acc-id" value="${accToEdit ? accToEdit.id : ''}">
-
-          <div class="form-group">
-            <label class="form-label">Nama Akun / Bank / E-Wallet *</label>
-            <input type="text" id="acc-name" class="form-control" placeholder="Contoh: BCA, Mandiri, GoPay, ShopeePay, Cash" value="${accToEdit ? accToEdit.name : ''}" required>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Tipe Akun *</label>
-            <select id="acc-type" class="form-control" required>
-              <option value="Bank" ${accToEdit && accToEdit.type === 'Bank' ? 'selected' : ''}>Rekening Bank</option>
-              <option value="Cash" ${accToEdit && accToEdit.type === 'Cash' ? 'selected' : ''}>Cash / Tunai</option>
-              <option value="E-Wallet" ${accToEdit && accToEdit.type === 'E-Wallet' ? 'selected' : ''}>E-Wallet / Dompet Digital</option>
-              <option value="Credit Card" ${accToEdit && accToEdit.type === 'Credit Card' ? 'selected' : ''}>Kartu Kredit / Paylater</option>
-              <option value="Investment" ${accToEdit && accToEdit.type === 'Investment' ? 'selected' : ''}>Investasi / Saham / Reksadana</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Saldo ${accToEdit ? 'Saat Ini' : 'Awal'} (Rp) *</label>
-            <input type="number" id="acc-balance" class="form-control" placeholder="0" value="${accToEdit ? accToEdit.balance : '0'}" required>
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Warna & Ikon</label>
-            <div style="display:flex;gap:10px;">
-              <input type="color" id="acc-color" class="form-control" value="${accToEdit ? accToEdit.color : '#16a34a'}" style="width:60px;padding:4px;">
-              <select id="acc-icon" class="form-control" style="flex:1;">
-                <option value="wallet" ${accToEdit && accToEdit.icon === 'wallet' ? 'selected' : ''}>Dompet (Wallet)</option>
-                <option value="building-columns" ${accToEdit && accToEdit.icon === 'building-columns' ? 'selected' : ''}>Bank</option>
-                <option value="money-bill" ${accToEdit && accToEdit.icon === 'money-bill' ? 'selected' : ''}>Uang Tunai (Cash)</option>
-                <option value="credit-card" ${accToEdit && accToEdit.icon === 'credit-card' ? 'selected' : ''}>Kartu Kredit</option>
-                <option value="chart-line" ${accToEdit && accToEdit.icon === 'chart-line' ? 'selected' : ''}>Investasi</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-footer">
-          <button type="button" class="btn btn-secondary" onclick="Modal.close()">Batal</button>
-          <button type="submit" class="btn btn-primary">Simpan Akun</button>
-        </div>
-      </form>
-    </div>
-  `;
-
-  document.getElementById("account-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const id = document.getElementById("acc-id").value;
-    const name = document.getElementById("acc-name").value;
-    const type = document.getElementById("acc-type").value;
-    const balance = Number(document.getElementById("acc-balance").value) || 0;
-    const color = document.getElementById("acc-color").value;
-    const icon = document.getElementById("acc-icon").value;
-
-    const res = await Storage.saveAccount({
-      id: id || undefined,
-      name,
-      type,
-      balance,
-      color,
-      icon
-    });
-
-    Modal.close();
-    if (res.success) {
-      Utils.showToast("Akun berhasil disimpan!", "success");
-      renderAccounts();
-    } else {
-      Utils.showToast("Gagal menyimpan akun: " + res.error, "error");
-    }
-  });
-
-  modal.classList.add("active");
 }
 
 async function deleteAccount(id) {
@@ -173,5 +90,3 @@ async function deleteAccount(id) {
 
 window.renderAccounts = renderAccounts;
 window.onPrivacyChanged = () => renderAccounts();
-Modal.openAccountModal = openAccountModal;
-window.openAccountModal = openAccountModal;
