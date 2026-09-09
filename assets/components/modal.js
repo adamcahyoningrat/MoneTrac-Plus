@@ -713,6 +713,8 @@ const Modal = {
     modal.classList.add("active");
   },
 
+
+  
   openSavingsMutationModal(goalId, mutationType = "deposit") {
     let modal = document.getElementById("universal-modal");
     if (!modal) {
@@ -741,8 +743,8 @@ const Modal = {
           <div class="modal-body">
             <div style="background:var(--bg-hover);padding:14px;border-radius:var(--radius-md);margin-bottom:16px;border:1px solid var(--border-color);">
               <div style="font-size:0.82rem;color:var(--text-muted);">Target:</div>
-              <div style="font-size:1.1rem;font-weight:700;color:var(--text-primary);">${goal.name}</div>
-              <div style="font-size:0.85rem;color:var(--text-secondary);margin-top:2px;">
+              <div style="font-size:1.1rem;font-weight:700;color:var(--text-primary);" id="mutation-goal-name">${goal.name}</div>
+              <div style="font-size:0.85rem;color:var(--text-secondary);margin-top:2px;" id="mutation-goal-info">
                 Terkumpul: <strong>${Utils.formatCurrency(goal.current_amount)}</strong> dari target ${Utils.formatCurrency(goal.target_amount)}
               </div>
             </div>
@@ -755,9 +757,9 @@ const Modal = {
             <div class="form-group">
               <label class="form-label">${isDeposit ? 'Ambil Dana Dari Akun' : 'Transfer Hasil Tarik Ke Akun'} *</label>
               <select id="mutation-account" class="form-control" required>
-                ${currentAccounts.map(a => `
+                ${currentAccounts.length > 0 ? currentAccounts.map(a => `
                   <option value="${a.id}">${a.name} (${Utils.formatCurrencyRaw(a.balance)})</option>
-                `).join('')}
+                `).join('') : '<option value="" disabled selected>Memuat akun...</option>'}
               </select>
             </div>
 
@@ -781,6 +783,64 @@ const Modal = {
         </form>
       </div>
     `;
+
+    document.getElementById("mutation-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const amount = Number(document.getElementById("mutation-amount").value);
+      const accountId = document.getElementById("mutation-account").value;
+      const date = document.getElementById("mutation-date").value;
+      const notes = document.getElementById("mutation-notes").value;
+
+      if (!accountId) {
+        Utils.showToast("Silakan pilih akun terlebih dahulu!", "error");
+        return;
+      }
+
+      const res = await Storage.addSavingsMutation({
+        goalId: goal.id,
+        type: mutationType,
+        amount: amount,
+        accountId: accountId,
+        date: date,
+        notes: notes
+      });
+
+      Modal.close();
+      if (res.success) {
+        Utils.showToast(isDeposit ? "Setoran tabungan berhasil disimpan!" : "Penarikan tabungan berhasil!", "success");
+        if (typeof renderSavings === "function") renderSavings();
+        if (typeof renderDashboard === "function") renderDashboard();
+      } else {
+        Utils.showToast("Gagal: " + res.error, "error");
+      }
+    });
+
+    // Tampilkan modal secara instan (0ms)
+    modal.classList.add("active");
+
+    // Refresh daftar akun dan target tabungan di background
+    Promise.all([Storage.getAccounts(), Storage.getSavingsGoals()]).then(([freshAcc, freshGoals]) => {
+      const accSelect = document.getElementById("mutation-account");
+      if (accSelect && freshAcc && freshAcc.length > 0) {
+        const cur = accSelect.value;
+        accSelect.innerHTML = freshAcc.map(a => `
+          <option value="${a.id}" ${cur === a.id ? 'selected' : ''}>${a.name} (${Utils.formatCurrencyRaw(a.balance)})</option>
+        `).join('');
+      }
+
+      if (freshGoals && freshGoals.length > 0) {
+        const targetGoal = freshGoals.find(g => g.id === goalId);
+        if (targetGoal) {
+          const nameEl = document.getElementById("mutation-goal-name");
+          const infoEl = document.getElementById("mutation-goal-info");
+          if (nameEl) nameEl.textContent = targetGoal.name;
+          if (infoEl) {
+            infoEl.innerHTML = `Terkumpul: <strong>${Utils.formatCurrency(targetGoal.current_amount)}</strong> dari target ${Utils.formatCurrency(targetGoal.target_amount)}`;
+          }
+        }
+      }
+    }).catch(e => console.warn(e));
+  },
 
     document.getElementById("mutation-form").addEventListener("submit", async (e) => {
       e.preventDefault();
