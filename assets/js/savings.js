@@ -5,6 +5,12 @@
 let allSavingsGoals = [];
 
 async function renderSavings() {
+  // Ambil target tabungan sekaligus daftar akun agar cache terisi
+  const [goals, accounts] = await Promise.all([
+    Storage.getSavingsGoals(),
+    Storage.getAccounts()
+  ]);
+  allSavingsGoals = goals || [];
   const goals = await Storage.getSavingsGoals();
   allSavingsGoals = goals || [];
 
