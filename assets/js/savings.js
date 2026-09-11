@@ -5,13 +5,11 @@
 let allSavingsGoals = [];
 
 async function renderSavings() {
-  // Ambil target tabungan sekaligus daftar akun agar cache terisi
+  // Ambil goals dan accounts sekaligus (tanpa deklarasi ganda)
   const [goals, accounts] = await Promise.all([
     Storage.getSavingsGoals(),
     Storage.getAccounts()
   ]);
-  allSavingsGoals = goals || [];
-  const goals = await Storage.getSavingsGoals();
   allSavingsGoals = goals || [];
 
   const totalCollected = allSavingsGoals.reduce((acc, g) => acc + (Number(g.current_amount) || 0), 0);
@@ -29,6 +27,7 @@ async function renderSavings() {
   if (remEl) remEl.innerHTML = Utils.formatCurrency(totalRemaining);
   if (pctEl) pctEl.textContent = `${totalPercent}%`;
 
+  // Mendukung ID savings-grid maupun goals-grid
   const grid = document.getElementById("savings-grid") || document.getElementById("goals-grid");
   if (!grid) return;
 
