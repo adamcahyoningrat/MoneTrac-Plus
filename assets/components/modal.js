@@ -776,7 +776,7 @@ const Modal = {
 
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" onclick="Modal.close()">Batal</button>
-            <button type="submit" class="btn ${isDeposit ? 'btn-success' : 'btn-primary'}">
+            <button type="submit" class="btn ${isDeposit ? 'btn-success' : 'btn-primary'}" id="btn-submit-mutation">
               ${isDeposit ? '<i class="fa-solid fa-plus"></i> Setor Dana' : '<i class="fa-solid fa-arrow-down"></i> Tarik Dana'}
             </button>
           </div>
@@ -784,8 +784,14 @@ const Modal = {
       </div>
     `;
 
+    // Flag proteksi agar form tidak bisa disubmit lebih dari satu kali
+    let isSubmitting = false;
+
     document.getElementById("mutation-form").addEventListener("submit", async (e) => {
       e.preventDefault();
+      if (isSubmitting) return; // Abaikan jika sedang memproses
+
+      const submitBtn = document.getElementById("btn-submit-mutation");
       const amount = Number(document.getElementById("mutation-amount").value);
       const accountId = document.getElementById("mutation-account").value;
       const date = document.getElementById("mutation-date").value;
@@ -796,27 +802,46 @@ const Modal = {
         return;
       }
 
-      const res = await Storage.addSavingsMutation({
-        goalId: goal.id,
-        type: mutationType,
-        amount: amount,
-        accountId: accountId,
-        date: date,
-        notes: notes
-      });
+      isSubmitting = true;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...`;
+      }
 
-      Modal.close();
-      if (res.success) {
-        Utils.showToast(isDeposit ? "Setoran tabungan berhasil disimpan!" : "Penarikan tabungan berhasil!", "success");
-        if (typeof renderSavings === "function") renderSavings();
-        if (typeof renderDashboard === "function") renderDashboard();
-      } else {
-        Utils.showToast("Gagal: " + res.error, "error");
+      try {
+        const res = await Storage.addSavingsMutation({
+          goalId: goal.id,
+          type: mutationType,
+          amount: amount,
+          accountId: accountId,
+          date: date,
+          notes: notes
+        });
+
+        Modal.close();
+        if (res.success) {
+          Utils.showToast(isDeposit ? "Setoran tabungan berhasil disimpan!" : "Penarikan tabungan berhasil!", "success");
+          if (typeof renderSavings === "function") renderSavings();
+          if (typeof renderDashboard === "function") renderDashboard();
+          if (typeof renderAccounts === "function") renderAccounts();
+        } else {
+          Utils.showToast("Gagal: " + res.error, "error");
+        }
+      } catch (err) {
+        console.error("Mutation error:", err);
+        Utils.showToast("Terjadi kesalahan: " + err.message, "error");
+      } finally {
+        isSubmitting = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = isDeposit ? '<i class="fa-solid fa-plus"></i> Setor Dana' : '<i class="fa-solid fa-arrow-down"></i> Tarik Dana';
+        }
       }
     });
 
     modal.classList.add("active");
 
+    // Background refresh daftar akun & goal
     Promise.all([Storage.getAccounts(), Storage.getSavingsGoals()]).then(([freshAcc, freshGoals]) => {
       const accSelect = document.getElementById("mutation-account");
       if (accSelect && freshAcc && freshAcc.length > 0) {
@@ -839,7 +864,6 @@ const Modal = {
       }
     }).catch(e => console.warn(e));
   },
-
   close() {
     const modal = document.getElementById("universal-modal");
     if (modal) {
