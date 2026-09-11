@@ -515,13 +515,13 @@ const Storage = {
 
       if (type === "deposit") {
         newGoalAmount += amt;
-        if (accountId) await this.updateAccountBalance(accountId, -amt);
+        // Pemotongan saldo akun sudah ditangani oleh saveTransaction di bawah
       } else if (type === "withdraw") {
         if (amt > newGoalAmount) {
           return { success: false, error: "Saldo tabungan tidak mencukupi untuk ditarik." };
         }
         newGoalAmount -= amt;
-        if (accountId) await this.updateAccountBalance(accountId, amt);
+        // Penambahan saldo akun sudah ditangani oleh saveTransaction di bawah
       }
 
       const newStatus = newGoalAmount >= Number(goal.target_amount) ? "completed" : "in_progress";
@@ -541,15 +541,20 @@ const Storage = {
         notes: notes || ""
       });
 
-      await this.saveTransaction({
-        type: "Transfer",
-        date: date || new Date().toISOString().split("T")[0],
-        amount: amt,
-        account_id: type === "deposit" ? accountId : null,
-        to_account_id: type === "withdraw" ? accountId : null,
-        category_name: type === "deposit" ? `Nabung: ${goal.name}` : `Tarik Tabungan: ${goal.name}`,
-        description: notes || (type === "deposit" ? `Setor tabungan ke ${goal.name}` : `Penarikan dari ${goal.name}`)
-      });
+      if (accountId && isValidUUID(accountId)) {
+        await this.saveTransaction({
+          type: "Transfer",
+          date: date || new Date().toISOString().split("T")[0],
+          amount: amt,
+          account_id: type === "deposit" ? accountId : null,
+          to_account_id: type === "withdraw" ? accountId : null,
+          category_name: type === "deposit" ? `Nabung: ${goal.name}` : `Tarik Tabungan: ${goal.name}`,
+          description: notes || (type === "deposit" ? `Setor tabungan ke ${goal.name}` : `Penarikan dari ${goal.name}`)
+        });
+      }
+
+      await this.getAccounts();
+      await this.getSavingsGoals();
 
       return { success: true, newAmount: newGoalAmount };
     } catch (err) {
@@ -557,7 +562,6 @@ const Storage = {
       return { success: false, error: err.message };
     }
   },
-
   // --------------------------------------------------------------------------
   // BUDGETS
   // --------------------------------------------------------------------------
