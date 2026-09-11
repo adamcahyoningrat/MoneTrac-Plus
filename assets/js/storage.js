@@ -515,13 +515,13 @@ const Storage = {
 
       if (type === "deposit") {
         newGoalAmount += amt;
-        // Pemotongan saldo akun sudah ditangani oleh saveTransaction di bawah
+        // JANGAN panggil updateAccountBalance di sini
       } else if (type === "withdraw") {
         if (amt > newGoalAmount) {
           return { success: false, error: "Saldo tabungan tidak mencukupi untuk ditarik." };
         }
         newGoalAmount -= amt;
-        // Penambahan saldo akun sudah ditangani oleh saveTransaction di bawah
+        // JANGAN panggil updateAccountBalance di sini
       }
 
       const newStatus = newGoalAmount >= Number(goal.target_amount) ? "completed" : "in_progress";
@@ -541,6 +541,7 @@ const Storage = {
         notes: notes || ""
       });
 
+      // saveTransaction di bawah ini yang akan memotong saldo akun kas murni tepat 1 kali
       if (accountId && isValidUUID(accountId)) {
         await this.saveTransaction({
           type: "Transfer",
