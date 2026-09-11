@@ -815,10 +815,8 @@ const Modal = {
       }
     });
 
-    // Tampilkan modal secara instan (0ms)
     modal.classList.add("active");
 
-    // Refresh daftar akun dan target tabungan di background
     Promise.all([Storage.getAccounts(), Storage.getSavingsGoals()]).then(([freshAcc, freshGoals]) => {
       const accSelect = document.getElementById("mutation-account");
       if (accSelect && freshAcc && freshAcc.length > 0) {
@@ -840,35 +838,6 @@ const Modal = {
         }
       }
     }).catch(e => console.warn(e));
-  },
-
-    document.getElementById("mutation-form").addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const amount = Number(document.getElementById("mutation-amount").value);
-      const accountId = document.getElementById("mutation-account").value;
-      const date = document.getElementById("mutation-date").value;
-      const notes = document.getElementById("mutation-notes").value;
-
-      const res = await Storage.addSavingsMutation({
-        goalId: goal.id,
-        type: mutationType,
-        amount: amount,
-        accountId: accountId,
-        date: date,
-        notes: notes
-      });
-
-      Modal.close();
-      if (res.success) {
-        Utils.showToast(isDeposit ? "Setoran tabungan berhasil disimpan!" : "Penarikan tabungan berhasil!", "success");
-        if (typeof renderSavings === "function") renderSavings();
-        if (typeof renderDashboard === "function") renderDashboard();
-      } else {
-        Utils.showToast("Gagal: " + res.error, "error");
-      }
-    });
-
-    modal.classList.add("active");
   },
 
   close() {
