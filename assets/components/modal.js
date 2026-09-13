@@ -869,10 +869,299 @@ const Modal = {
     if (modal) {
       modal.classList.remove("active");
     }
-  }
+  },
+
+  // --------------------------------------------------------------------------
+  // DEBT & RECEIVABLE MODALS
+  // --------------------------------------------------------------------------
+  openDebtModal(debtToEdit = null) {
+    let modal = document.getElementById("universal-modal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "universal-modal";
+      modal.className = "modal-overlay";
+      document.body.appendChild(modal);
+    }
+
+    const isEdit = !!debtToEdit;
+    const currentAccounts = Storage._accounts || [];
+
+    modal.innerHTML = `
+      <div class="modal-container">
+        <div class="modal-header">
+          <div class="modal-title">
+            <i class="fa-solid fa-hand-holding-dollar" style="color:var(--primary)"></i>
+            <span>${isEdit ? 'Edit Catatan' : 'Tambah Hutang / Piutang'}</span>
+          </div>
+          <button class="modal-close" onclick="Modal.close()">&times;</button>
+        </div>
+
+        <form id="debt-form" class="modal-form-wrapper">
+          <input type="hidden" id="debt-id" value="${debtToEdit ? debtToEdit.id : ''}">
+
+          <div class="modal-body">
+            <div class="form-group">
+              <label class="form-label">Jenis Catatan *</label>
+              <select id="debt-type" class="form-control" required ${isEdit ? 'disabled' : ''}>
+                <option value="payable" ${debtToEdit && debtToEdit.type === 'payable' ? 'selected' : ''}>Hutang Saya (Saya Berhutang ke Orang/Bank)</option>
+                <option value="receivable" ${debtToEdit && debtToEdit.type === 'receivable' ? 'selected' : ''}>Piutang Saya (Orang Lain Berhutang ke Saya)</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" id="label-person-name">Nama Pihak (Orang / Bank / Teman) *</label>
+              <input type="text" id="debt-person" class="form-control" placeholder="Contoh: Budi, Bank BCA, KPR, Teman Kantor" value="${debtToEdit ? debtToEdit.person_name : ''}" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Total Nominal (Rp) *</label>
+              <input type="number" id="debt-total-amount" class="form-control" placeholder="0" value="${debtToEdit ? debtToEdit.total_amount : ''}" required min="1000" style="font-size:1.2rem;font-weight:700;">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Jatuh Tempo (Opsional)</label>
+              <input type="date" id="debt-due-date" class="form-control" value="${debtToEdit && debtToEdit.due_date ? debtToEdit.due_date.split('T')[0] : ''}">
+            </div>
+
+            ${!isEdit ? `
+              <div class="form-group" style="background:var(--bg-hover);padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-color);">
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:0.9rem;">
+                  <input type="checkbox" id="debt-adjust-balance" style="width:16px;height:16px;cursor:pointer;">
+                  <span>Sesuaikan saldo akun sekarang?</span>
+                </label>
+                <div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px;">
+                  Centang jika uang baru saja diterima/dipinjamkan hari ini. Jangan centang jika ini hutang lama yang hanya ingin dicatat.
+                </div>
+
+                <div id="debt-account-select-group" style="display:none;margin-top:10px;">
+                  <label class="form-label" style="font-size:0.82rem;">Pilih Akun Terkait *</label>
+                  <select id="debt-account" class="form-control">
+                    ${currentAccounts.map(a => `<option value="${a.id}">${a.name} (${Utils.formatCurrencyRaw(a.balance)})</option>`).join('')}
+                  </select>
+                </div>
+              </div>
+            ` : ''}
+
+            <div class="form-group">
+              <label class="form-label">Catatan / Keterangan</label>
+              <textarea id="debt-notes" class="form-control" rows="2" placeholder="Catatan keperluan pinjaman...">${debtToEdit ? (debtToEdit.notes || '') : ''}</textarea>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="Modal.close()">Batal</button>
+            <button type="submit" class="btn btn-primary" id="btn-submit-debt">Simpan Catatan</button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    // Toggle dropdown akun jika checkbox dicentang
+    const chk = document.getElementById("debt-adjust-balance");
+    const accGroup = document.getElementById("debt-account-select-group");
+    if (chk && accGroup) {
+      chk.addEventListener("change", () => {
+        accGroup.style.display = chk.checked ? "block" : "none";
+      });
+    }
+
+    let isSubmitting = false;
+    document.getElementById("debt-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (isSubmitting) return;
+
+      const submitBtn = document.getElementById("btn-submit-debt");
+      isSubmitting = true;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...`;
+      }
+
+      const id = document.getElementById("debt-id").value;
+      const type = document.getElementById("debt-type").value;
+      const person = document.getElementById("debt-person").value;
+      const total = Number(document.getElementById("debt-total-amount").value);
+      const dueDate = document.getElementById("debt-due-date").value;
+      const notes = document.getElementById("debt-notes").value;
+      const adjust = document.getElementById("debt-adjust-balance")?.checked || false;
+      const accountId = document.getElementById("debt-account")?.value || null;
+
+      try {
+        const res = await Storage.saveDebt({
+          id: id || undefined,
+          type,
+          person_name: person,
+          total_amount: total,
+          due_date: dueDate || null,
+          notes
+        }, adjust, accountId);
+
+        Modal.close();
+        if (res.success) {
+          Utils.showToast("Catatan berhasil disimpan!", "success");
+          if (typeof renderDebts === "function") renderDebts();
+          if (typeof renderDashboard === "function") renderDashboard();
+          if (typeof renderAccounts === "function") renderAccounts();
+        } else {
+          Utils.showToast("Gagal: " + res.error, "error");
+        }
+      } catch (err) {
+        Utils.showToast("Terjadi kesalahan: " + err.message, "error");
+      } finally {
+        isSubmitting = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `Simpan Catatan`;
+        }
+      }
+    });
+
+    modal.classList.add("active");
+
+    // Background refresh akun
+    Storage.getAccounts().then(freshAcc => {
+      const accSelect = document.getElementById("debt-account");
+      if (accSelect && freshAcc.length > 0) {
+        accSelect.innerHTML = freshAcc.map(a => `<option value="${a.id}">${a.name} (${Utils.formatCurrencyRaw(a.balance)})</option>`).join('');
+      }
+    }).catch(e => console.warn(e));
+  },
+
+  openDebtPaymentModal(debtId) {
+    let modal = document.getElementById("universal-modal");
+    if (!modal) {
+      modal = document.createElement("div");
+      modal.id = "universal-modal";
+      modal.className = "modal-overlay";
+      document.body.appendChild(modal);
+    }
+
+    const debts = Storage._debts || [];
+    const debt = debts.find(d => d.id === debtId);
+    if (!debt) {
+      Utils.showToast("Data tidak ditemukan!", "error");
+      return;
+    }
+
+    const currentAccounts = Storage._accounts || [];
+    const isPayable = debt.type === "payable";
+    const total = Number(debt.total_amount) || 0;
+    const paid = Number(debt.paid_amount) || 0;
+    const sisa = Math.max(0, total - paid);
+
+    modal.innerHTML = `
+      <div class="modal-container">
+        <div class="modal-header">
+          <div class="modal-title">
+            <i class="fa-solid ${isPayable ? 'fa-money-bill-wave' : 'fa-hand-holding-dollar'}" style="color:var(--primary)"></i>
+            <span>${isPayable ? 'Bayar Cicilan / Pelunasan' : 'Catat Penerimaan Pelunasan'}</span>
+          </div>
+          <button class="modal-close" onclick="Modal.close()">&times;</button>
+        </div>
+
+        <form id="debt-pay-form" class="modal-form-wrapper">
+          <div class="modal-body">
+            <div style="background:var(--bg-hover);padding:14px;border-radius:var(--radius-md);margin-bottom:16px;border:1px solid var(--border-color);">
+              <div style="font-size:0.82rem;color:var(--text-muted);">${isPayable ? 'Hutang ke:' : 'Piutang dari:'}</div>
+              <div style="font-size:1.1rem;font-weight:700;color:var(--text-primary);">${debt.person_name}</div>
+              <div style="font-size:0.85rem;color:var(--text-secondary);margin-top:2px;">
+                Sisa Tagihan: <strong style="color:var(--danger);">${Utils.formatCurrency(sisa)}</strong> (Total: ${Utils.formatCurrency(total)})
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Nominal Pembayaran (Rp) *</label>
+              <input type="number" id="pay-amount" class="form-control" placeholder="0" value="${sisa}" max="${sisa}" min="1" required style="font-size:1.25rem;font-weight:700;">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">${isPayable ? 'Ambil Dana Dari Akun' : 'Terima Dana Ke Akun'} *</label>
+              <select id="pay-account" class="form-control" required>
+                ${currentAccounts.map(a => `<option value="${a.id}">${a.name} (${Utils.formatCurrencyRaw(a.balance)})</option>`).join('')}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Tanggal Pembayaran</label>
+              <input type="date" id="pay-date" class="form-control" value="${new Date().toISOString().split('T')[0]}" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Catatan</label>
+              <input type="text" id="pay-notes" class="form-control" placeholder="${isPayable ? 'Cicilan ke-1, pelunasan, dsb.' : 'Cicilan teman transfer bank...'}">
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" onclick="Modal.close()">Batal</button>
+            <button type="submit" class="btn btn-primary" id="btn-submit-pay">
+              <i class="fa-solid fa-check"></i> Simpan Pembayaran
+            </button>
+          </div>
+        </form>
+      </div>
+    `;
+
+    let isSubmitting = false;
+    document.getElementById("debt-pay-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (isSubmitting) return;
+
+      const submitBtn = document.getElementById("btn-submit-pay");
+      const amount = Number(document.getElementById("pay-amount").value);
+      const accountId = document.getElementById("pay-account").value;
+      const date = document.getElementById("pay-date").value;
+      const notes = document.getElementById("pay-notes").value;
+
+      isSubmitting = true;
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...`;
+      }
+
+      try {
+        const res = await Storage.addDebtPayment({
+          debtId,
+          amount,
+          accountId,
+          date,
+          notes
+        });
+
+        Modal.close();
+        if (res.success) {
+          Utils.showToast("Pembayaran berhasil dicatat!", "success");
+          if (typeof renderDebts === "function") renderDebts();
+          if (typeof renderDashboard === "function") renderDashboard();
+          if (typeof renderAccounts === "function") renderAccounts();
+        } else {
+          Utils.showToast("Gagal: " + res.error, "error");
+        }
+      } catch (err) {
+        Utils.showToast("Terjadi kesalahan: " + err.message, "error");
+      } finally {
+        isSubmitting = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = `<i class="fa-solid fa-check"></i> Simpan Pembayaran`;
+        }
+      }
+    });
+
+    modal.classList.add("active");
+
+    Storage.getAccounts().then(freshAcc => {
+      const accSelect = document.getElementById("pay-account");
+      if (accSelect && freshAcc.length > 0) {
+        accSelect.innerHTML = freshAcc.map(a => `<option value="${a.id}">${a.name} (${Utils.formatCurrencyRaw(a.balance)})</option>`).join('');
+      }
+    }).catch(e => console.warn(e));
+  },
 };
 
 // Global Handlers attached everywhere
+window.openDebtModal = (d) => Modal.openDebtModal(d);
+window.openDebtPaymentModal = (id) => Modal.openDebtPaymentModal(id);
 window.openTransactionModal = (tx) => Modal.openTransactionModal(tx);
 window.openAccountModal = (id) => Modal.openAccountModal(id);
 window.openCategoryModal = (id) => Modal.openCategoryModal(id);
