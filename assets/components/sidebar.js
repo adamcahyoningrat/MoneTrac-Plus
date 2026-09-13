@@ -12,6 +12,7 @@ const Sidebar = {
       { id: "transactions", href: "transactions.html", icon: "fa-receipt", label: "Transaksi" },
       { id: "accounts", href: "accounts.html", icon: "fa-building-columns", label: "Akun & Dompet" },
       { id: "savings", href: "savings.html", icon: "fa-piggy-bank", label: "Target Tabungan", badge: "Baru" },
+      { id: "debts", href: "debts.html", icon: "fa-hand-holding-dollar", label: "Hutang & Piutang", badge: "Baru" },
       { id: "categories", href: "categories.html", icon: "fa-tags", label: "Kategori" },
       { id: "budget", href: "budget.html", icon: "fa-chart-simple", label: "Anggaran (Budget)" },
       { id: "kpi", href: "kpi.html", icon: "fa-gauge-high", label: "KPI Keuangan" },
