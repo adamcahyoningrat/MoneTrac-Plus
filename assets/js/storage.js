@@ -14,6 +14,7 @@ const Storage = {
   _transactions: [],
   _budgets: [],
   _savings: [],
+  _debts: [],
 
   // --------------------------------------------------------------------------
   // ACCOUNTS
@@ -648,5 +649,218 @@ const Storage = {
       console.error("Supabase deleteBudget error:", err);
       return { success: false, error: err.message };
     }
-  }
+  },
+
+  // --------------------------------------------------------------------------
+  // DEBTS & RECEIVABLES (HUTANG & PIUTANG)
+  // --------------------------------------------------------------------------
+  async getDebts() {
+    const client = SupabaseConfig.getClient();
+    const user = await Auth.getCurrentUser();
+    if (!client || !user) return this._debts || [];
+
+    try {
+      const { data, error } = await client
+        .from("debts")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      this._debts = data || [];
+      return this._debts;
+    } catch (err) {
+      console.error("Supabase getDebts error:", err);
+      return this._debts || [];
+    }
+  },
+
+  async saveDebt(debt, adjustBalance = false, accountId = null) {
+    const client = SupabaseConfig.getClient();
+    const user = await Auth.getCurrentUser();
+    if (!client || !user) return { success: false, error: "Sesi tidak aktif." };
+
+    const totalAmount = Number(debt.total_amount) || 0;
+    const paidAmount = Number(debt.paid_amount) || 0;
+    let status = "unpaid";
+    if (paidAmount >= totalAmount) {
+      status = "paid";
+    } else if (paidAmount > 0) {
+      status = "partially_paid";
+    }
+
+    const payload = {
+      user_id: user.id,
+      type: debt.type || "payable",
+      person_name: debt.person_name,
+      total_amount: totalAmount,
+      paid_amount: paidAmount,
+      due_date: debt.due_date || null,
+      status: status,
+      notes: debt.notes || "",
+      updated_at: new Date().toISOString()
+    };
+
+    try {
+      let resData;
+      const isNew = !debt.id || !isValidUUID(debt.id);
+
+      if (!isNew) {
+        const { data, error } = await client
+          .from("debts")
+          .update(payload)
+          .eq("id", debt.id)
+          .eq("user_id", user.id)
+          .select()
+          .single();
+        if (error) throw error;
+        resData = data;
+      } else {
+        const { data, error } = await client
+          .from("debts")
+          .insert(payload)
+          .select()
+          .single();
+        if (error) throw error;
+        resData = data;
+
+        // Jika opsi "Sesuaikan saldo akun" dicentang pada hutang/piutang baru:
+        if (adjustBalance && accountId && isValidUUID(accountId) && totalAmount > 0) {
+          if (debt.type === "payable") {
+            // Kita pinjam uang -> Saldo kas/bank kita bertambah
+            await this.saveTransaction({
+              type: "Income",
+              amount: totalAmount,
+              account_id: accountId,
+              category_name: "Pinjaman / Hutang",
+              description: `Pencairan hutang dari: ${debt.person_name}`,
+              date: new Date().toISOString().split("T")[0]
+            });
+          } else if (debt.type === "receivable") {
+            // Kita meminjamkan uang -> Saldo kas/bank kita berkurang
+            await this.saveTransaction({
+              type: "Expense",
+              amount: totalAmount,
+              account_id: accountId,
+              category_name: "Pinjaman Diberikan",
+              description: `Pinjaman diberikan ke: ${debt.person_name}`,
+              date: new Date().toISOString().split("T")[0]
+            });
+          }
+        }
+      }
+
+      await this.getDebts();
+      await this.getAccounts();
+      return { success: true, data: resData };
+    } catch (err) {
+      console.error("Supabase saveDebt error:", err);
+      return { success: false, error: err.message };
+    }
+  },
+
+  async deleteDebt(debtId) {
+    const client = SupabaseConfig.getClient();
+    const user = await Auth.getCurrentUser();
+    if (!client || !user) return { success: false, error: "Sesi tidak aktif." };
+
+    try {
+      const { error } = await client
+        .from("debts")
+        .delete()
+        .eq("id", debtId)
+        .eq("user_id", user.id);
+
+      if (error) throw error;
+      await this.getDebts();
+      return { success: true };
+    } catch (err) {
+      console.error("Supabase deleteDebt error:", err);
+      return { success: false, error: err.message };
+    }
+  },
+
+  async addDebtPayment({ debtId, amount, accountId, date, notes }) {
+    const client = SupabaseConfig.getClient();
+    const user = await Auth.getCurrentUser();
+    if (!client || !user) return { success: false, error: "Sesi tidak aktif." };
+
+    const payAmt = Number(amount) || 0;
+    if (payAmt <= 0) return { success: false, error: "Nominal harus lebih besar dari 0" };
+
+    try {
+      const { data: debt, error: dErr } = await client
+        .from("debts")
+        .select("*")
+        .eq("id", debtId)
+        .eq("user_id", user.id)
+        .single();
+
+      if (dErr || !debt) return { success: false, error: "Data hutang/piutang tidak ditemukan." };
+
+      const totalAmt = Number(debt.total_amount) || 0;
+      const curPaid = Number(debt.paid_amount) || 0;
+      const sisa = Math.max(0, totalAmt - curPaid);
+
+      if (payAmt > sisa) {
+        return { success: false, error: `Nominal melebihi sisa tagihan (Maks: ${Utils.formatCurrencyRaw(sisa)})` };
+      }
+
+      const newPaid = curPaid + payAmt;
+      const newStatus = newPaid >= totalAmt ? "paid" : "partially_paid";
+
+      // 1. Update sisa terbayar di tabel debts
+      await client
+        .from("debts")
+        .update({
+          paid_amount: newPaid,
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", debtId)
+        .eq("user_id", user.id);
+
+      // 2. Catat ke debt_payments
+      await client.from("debt_payments").insert({
+        user_id: user.id,
+        debt_id: debtId,
+        amount: payAmt,
+        account_id: isValidUUID(accountId) ? accountId : null,
+        payment_date: date || new Date().toISOString().split("T")[0],
+        notes: notes || ""
+      });
+
+      // 3. Mutasi saldo akun (1x melalui saveTransaction)
+      if (accountId && isValidUUID(accountId)) {
+        if (debt.type === "payable") {
+          // Bayar hutang kita -> Kas berkurang (Expense)
+          await this.saveTransaction({
+            type: "Expense",
+            amount: payAmt,
+            account_id: accountId,
+            category_name: "Bayar Hutang",
+            description: notes || `Bayar hutang ke: ${debt.person_name}`,
+            date: date || new Date().toISOString().split("T")[0]
+          });
+        } else if (debt.type === "receivable") {
+          // Orang bayar piutang ke kita -> Kas bertambah (Income)
+          await this.saveTransaction({
+            type: "Income",
+            amount: payAmt,
+            account_id: accountId,
+            category_name: "Terima Piutang",
+            description: notes || `Terima pelunasan piutang dari: ${debt.person_name}`,
+            date: date || new Date().toISOString().split("T")[0]
+          });
+        }
+      }
+
+      await this.getDebts();
+      await this.getAccounts();
+      return { success: true, newPaid, newStatus };
+    } catch (err) {
+      console.error("Supabase addDebtPayment error:", err);
+      return { success: false, error: err.message };
+    }
+  },
 };
