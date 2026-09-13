@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,63 +16,100 @@
   <link rel="stylesheet" href="assets/css/theme.css">
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/responsive.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="theme-light">
+<body data-theme="light">
   <div class="app-layout">
+    <!-- Dynamic Sidebar -->
     <div id="sidebar-container"></div>
 
-    <div class="main-content-wrapper">
+    <div class="main-content">
+      <!-- Dynamic Navbar -->
       <div id="navbar-container"></div>
 
-      <main class="page-body">
-        <div class="page-container">
-          <!-- Action Bar -->
-          <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-            <div>
-              <h2 style="font-size:1.4rem;font-weight:800;color:var(--text-primary);margin:0;">Catatan Hutang & Piutang</h2>
-              <div style="font-size:0.85rem;color:var(--text-secondary);margin-top:2px;">Pantau kewajiban dan tagihan Anda secara teratur</div>
+      <!-- Main Page Content -->
+      <main class="content-wrapper">
+        <!-- 4 Stat Cards Sejajar Rapi -->
+        <div class="stats-grid">
+          <!-- Card 1: Total Hutang -->
+          <div class="stat-card" style="--stat-gradient: linear-gradient(135deg, #ef4444, #b91c1c); --stat-color: #ef4444; --stat-bg: rgba(239, 68, 68, 0.12);">
+            <div class="stat-card-header">
+              <span class="stat-label">Total Hutang Saya</span>
+              <div class="stat-icon"><i class="fa-solid fa-arrow-down-long"></i></div>
             </div>
-            <button class="btn btn-primary" onclick="Modal.openDebtModal()">
-              <i class="fa-solid fa-plus"></i> Tambah Catatan
-            </button>
-          </div>
-
-          <!-- Stat Cards -->
-          <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-bottom: 24px;">
-            <div class="stat-card">
-              <div class="stat-icon" style="background:#ef444422;color:#ef4444;"><i class="fa-solid fa-arrow-down-long"></i></div>
-              <div class="stat-info">
-                <div class="stat-label">Total Hutang Saya</div>
-                <div class="stat-value" id="debts-total-payable" style="color:#ef4444;">Rp 0</div>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:#10b98122;color:#10b981;"><i class="fa-solid fa-arrow-up-long"></i></div>
-              <div class="stat-info">
-                <div class="stat-label">Total Piutang Saya</div>
-                <div class="stat-value" id="debts-total-receivable" style="color:#10b981;">Rp 0</div>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon" style="background:#2563eb22;color:#2563eb;"><i class="fa-solid fa-circle-check"></i></div>
-              <div class="stat-info">
-                <div class="stat-label">Total Selesai / Lunas</div>
-                <div class="stat-value" id="debts-total-paid">0 Catatan</div>
-              </div>
+            <div class="stat-value" id="debts-total-payable" style="color:#ef4444;">Rp 0</div>
+            <div class="stat-footer">
+              <span class="stat-trend down"><i class="fa-solid fa-clock"></i> Kewajiban belum lunas</span>
             </div>
           </div>
 
-          <!-- Filter Tabs -->
-          <div class="tabs-container" style="display:flex;gap:8px;margin-bottom:20px;overflow-x:auto;padding-bottom:4px;">
-            <button class="btn btn-sm debt-filter-btn active" data-filter="all" onclick="filterDebts('all')">Semua</button>
-            <button class="btn btn-sm btn-secondary debt-filter-btn" data-filter="payable" onclick="filterDebts('payable')">Hutang Saya (Payable)</button>
-            <button class="btn btn-sm btn-secondary debt-filter-btn" data-filter="receivable" onclick="filterDebts('receivable')">Piutang Saya (Receivable)</button>
+          <!-- Card 2: Total Piutang -->
+          <div class="stat-card" style="--stat-gradient: linear-gradient(135deg, #10b981, #059669); --stat-color: #10b981; --stat-bg: rgba(16, 185, 129, 0.12);">
+            <div class="stat-card-header">
+              <span class="stat-label">Total Piutang Saya</span>
+              <div class="stat-icon"><i class="fa-solid fa-arrow-up-long"></i></div>
+            </div>
+            <div class="stat-value" id="debts-total-receivable" style="color:#10b981;">Rp 0</div>
+            <div class="stat-footer">
+              <span class="stat-trend up"><i class="fa-solid fa-hand-holding-dollar"></i> Tagihan di orang lain</span>
+            </div>
           </div>
 
-          <!-- Cards Grid Container -->
-          <div class="goals-grid" id="debts-grid">
-            <!-- Dynamic injected cards -->
+          <!-- Card 3: Selisih Bersih (Net Balance) -->
+          <div class="stat-card" style="--stat-gradient: var(--primary-gradient); --stat-color: var(--primary); --stat-bg: rgba(59, 130, 246, 0.12);">
+            <div class="stat-card-header">
+              <span class="stat-label">Selisih Bersih (Net)</span>
+              <div class="stat-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+            </div>
+            <div class="stat-value" id="debts-net-balance">Rp 0</div>
+            <div class="stat-footer">
+              <span style="font-size:0.8rem;color:var(--text-muted);"><i class="fa-solid fa-calculator"></i> Piutang - Hutang</span>
+            </div>
           </div>
+
+          <!-- Card 4: Status Selesai / Lunas -->
+          <div class="stat-card" style="--stat-gradient: linear-gradient(135deg, #8b5cf6, #6d28d9); --stat-color: #8b5cf6; --stat-bg: rgba(139, 92, 246, 0.12);">
+            <div class="stat-card-header">
+              <span class="stat-label">Status Pelunasan</span>
+              <div class="stat-icon"><i class="fa-solid fa-circle-check"></i></div>
+            </div>
+            <div class="stat-value" id="debts-total-paid" style="color:#8b5cf6;">0 Lunas</div>
+            <div class="stat-footer">
+              <span style="font-size:0.8rem;color:var(--text-muted);"><i class="fa-solid fa-list-check"></i> Dari seluruh catatan</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section Title & Action Button -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h2 style="font-size:1.25rem;font-weight:700;color:var(--text-primary);margin:0;">Daftar Hutang & Piutang</h2>
+            <p style="font-size:0.85rem;color:var(--text-muted);margin-top:2px;">Pantau progres pembayaran pinjaman dan tagihan Anda</p>
+          </div>
+
+          <button class="btn btn-primary" onclick="Modal.openDebtModal()">
+            <i class="fa-solid fa-plus"></i> Tambah Catatan Baru
+          </button>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div style="display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;">
+          <button class="btn btn-primary btn-sm debt-filter-btn active" data-filter="all" onclick="filterDebts('all')">
+            <i class="fa-solid fa-layer-group"></i> Semua
+          </button>
+          <button class="btn btn-secondary btn-sm debt-filter-btn" data-filter="payable" onclick="filterDebts('payable')">
+            <i class="fa-solid fa-arrow-down-long" style="color:#ef4444;"></i> Hutang Saya (Payable)
+          </button>
+          <button class="btn btn-secondary btn-sm debt-filter-btn" data-filter="receivable" onclick="filterDebts('receivable')">
+            <i class="fa-solid fa-arrow-up-long" style="color:#10b981;"></i> Piutang Saya (Receivable)
+          </button>
+        </div>
+
+        <!-- Cards Grid Container -->
+        <div class="goals-grid" id="debts-grid">
+          <!-- Dynamic Injected Cards -->
         </div>
       </main>
     </div>
@@ -80,8 +117,7 @@
 
   <div id="universal-modal" class="modal-overlay"></div>
 
-  <!-- Scripts -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Universal Scripts -->
   <script src="assets/js/supabase-config.js"></script>
   <script src="assets/js/auth.js"></script>
   <script src="assets/js/utils.js"></script>
@@ -91,6 +127,7 @@
   <script src="assets/components/modal.js"></script>
   <script src="assets/js/app.js"></script>
   <script src="assets/js/debts.js"></script>
+
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
       await AppState.init("debts", "Hutang & Piutang", "Pantau dan kelola kewajiban serta pinjaman Anda");
