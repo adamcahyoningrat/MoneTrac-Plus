@@ -32,12 +32,19 @@ async function renderDebts() {
     }
   });
 
+  const netBalance = totalReceivable - totalPayable;
+
   const payableEl = document.getElementById("debts-total-payable");
   const receivableEl = document.getElementById("debts-total-receivable");
+  const netEl = document.getElementById("debts-net-balance");
   const paidEl = document.getElementById("debts-total-paid");
 
   if (payableEl) payableEl.innerHTML = Utils.formatCurrency(totalPayable);
   if (receivableEl) receivableEl.innerHTML = Utils.formatCurrency(totalReceivable);
+  if (netEl) {
+    netEl.innerHTML = Utils.formatCurrency(netBalance);
+    netEl.style.color = netBalance >= 0 ? "var(--success, #10b981)" : "var(--danger, #ef4444)";
+  }
   if (paidEl) paidEl.textContent = `${paidCount} Lunas`;
 
   const grid = document.getElementById("debts-grid");
@@ -52,7 +59,7 @@ async function renderDebts() {
         <div class="empty-title">Belum Ada Catatan Hutang / Piutang</div>
         <div class="empty-desc">Catat pinjaman atau tagihan Anda agar keuangan tetap terpantau dengan baik.</div>
         <button class="btn btn-primary" onclick="Modal.openDebtModal()" style="margin-top:12px;">
-          <i class="fa-solid fa-plus"></i> Tambah Catatan
+          <i class="fa-solid fa-plus"></i> Tambah Catatan Baru
         </button>
       </div>
     `;
@@ -77,7 +84,7 @@ async function renderDebts() {
       <div class="goal-card card-hover" style="border-left: 4px solid ${isPayable ? '#ef4444' : '#10b981'};">
         <div class="goal-header">
           <div style="display:flex;align-items:center;gap:12px;">
-            <div class="goal-icon" style="background:${isPayable ? '#ef444422' : '#10b98122'};color:${isPayable ? '#ef4444' : '#10b981'};">
+            <div class="goal-icon" style="background:${isPayable ? 'rgba(239,68,68,0.15)' : 'rgba(16,185,129,0.15)'};color:${isPayable ? '#ef4444' : '#10b981'};">
               <i class="fa-solid ${isPayable ? 'fa-arrow-down-long' : 'fa-arrow-up-long'}"></i>
             </div>
             <div>
@@ -106,7 +113,7 @@ async function renderDebts() {
               </span>
             </div>
             <div style="text-align:right;">
-              <div style="font-size:0.75rem;color:var(--text-muted);">Total:</div>
+              <div style="font-size:0.75rem;color:var(--text-muted);">Total Tagihan:</div>
               <span class="goal-target">${Utils.formatCurrency(total)} (${percent}%)</span>
             </div>
           </div>
@@ -115,11 +122,11 @@ async function renderDebts() {
             <div class="progress-bar" style="width:${percent}%;background:${isDone ? 'var(--success)' : (isPayable ? '#ef4444' : '#10b981')};"></div>
           </div>
           <div style="font-size:0.75rem;color:var(--text-muted);margin-top:6px;">
-            <i class="fa-regular fa-clock"></i> Tempo: ${dueText}
+            <i class="fa-regular fa-clock"></i> Jatuh Tempo: ${dueText}
           </div>
         </div>
 
-        <div class="goal-actions" style="margin-top:10px;">
+        <div class="goal-actions" style="margin-top:12px;">
           ${!isDone ? `
             <button class="btn ${isPayable ? 'btn-primary' : 'btn-success'} btn-sm btn-block" onclick="Modal.openDebtPaymentModal('${d.id}')">
               <i class="fa-solid fa-money-bill-wave"></i> ${isPayable ? 'Bayar Cicilan / Lunas' : 'Terima Pelunasan'}
@@ -138,9 +145,10 @@ async function renderDebts() {
 function filterDebts(type) {
   activeFilter = type;
   document.querySelectorAll(".debt-filter-btn").forEach(btn => {
-    btn.classList.toggle("active", btn.getAttribute("data-filter") === type);
-    btn.classList.toggle("btn-primary", btn.getAttribute("data-filter") === type);
-    btn.classList.toggle("btn-secondary", btn.getAttribute("data-filter") !== type);
+    const isTarget = btn.getAttribute("data-filter") === type;
+    btn.classList.toggle("active", isTarget);
+    btn.classList.toggle("btn-primary", isTarget);
+    btn.classList.toggle("btn-secondary", !isTarget);
   });
   renderDebts();
 }
@@ -160,3 +168,4 @@ async function deleteDebt(id) {
 window.renderDebts = renderDebts;
 window.filterDebts = filterDebts;
 window.deleteDebt = deleteDebt;
+window.onPrivacyChanged = () => renderDebts();
