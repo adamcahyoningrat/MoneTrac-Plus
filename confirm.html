@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verifikasi Akun - MoneTrac+</title>
+  
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
+  <link rel="alternate icon" href="assets/img/favicon.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="assets/css/theme.css">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/responsive.css">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    .confirm-wrapper {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background: radial-gradient(circle at top right, rgba(6, 182, 212, 0.15), transparent 45%), radial-gradient(circle at bottom left, rgba(14, 165, 233, 0.1), transparent 45%), var(--bg-body);
+      box-sizing: border-box;
+    }
+    .confirm-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-xl);
+      width: 100%;
+      max-width: 460px;
+      padding: 40px 32px;
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+      box-sizing: border-box;
+    }
+    .status-icon-box {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+    }
+    .status-loading {
+      background: rgba(14, 165, 233, 0.12);
+      color: var(--primary);
+    }
+    .status-success {
+      background: rgba(16, 185, 129, 0.12);
+      color: #10b981;
+    }
+    .status-error {
+      background: rgba(239, 68, 68, 0.12);
+      color: #ef4444;
+    }
+  </style>
+</head>
+<body data-theme="light">
+  <div class="confirm-wrapper">
+    <div class="confirm-card">
+      <!-- Icon Box -->
+      <div id="status-icon" class="status-icon-box status-loading">
+        <i class="fa-solid fa-spinner fa-spin" id="icon-graphic"></i>
+      </div>
+
+      <!-- Title & Message -->
+      <h2 id="status-title" style="font-size:1.4rem;font-weight:800;color:var(--text-primary);margin-bottom:8px;">Memverifikasi Akun...</h2>
+      <p id="status-desc" style="font-size:0.9rem;color:var(--text-muted);line-height:1.5;margin-bottom:24px;">
+        Mohon tunggu sebentar, sistem sedang memverifikasi tautan konfirmasi email Anda.
+      </p>
+
+      <!-- Action Button -->
+      <div id="action-area" style="display:none;">
+        <a href="dashboard.html" class="btn btn-primary btn-block btn-lg" id="btn-action">
+          <i class="fa-solid fa-arrow-right"></i> Buka Dashboard
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/supabase-config.js"></script>
+  <script src="assets/js/auth.js"></script>
+  <script src="assets/js/utils.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const client = SupabaseConfig.getClient();
+
+      if (!client) {
+        showStatus("error", "Konfigurasi Belum Siap", "Koneksi Supabase belum terkonfigurasi dengan benar.", "auth.html", "Kembali ke Halaman Masuk");
+        return;
+      }
+
+      try {
+        // Supabase secara otomatis membaca access_token dari hash URL (#access_token=...)
+        const { data: { session }, error } = await client.auth.getSession();
+
+        if (error) throw error;
+
+        if (session && session.user) {
+          // Simpan sesi ke penyimpanan lokal
+          localStorage.setItem("monetrac_local_user", JSON.stringify({
+            id: session.user.id,
+            email: session.user.email,
+            user_metadata: session.user.user_metadata || {}
+          }));
+
+          showStatus("success", "Email Berhasil Dikonfirmasi!", "Selamat datang di MoneTrac+! Akun Anda telah aktif dan siap digunakan. Mengalihkan ke Dashboard dalam 3 detik...", "dashboard.html", "Langsung ke Dashboard");
+
+          // Otomatis arahkan ke dashboard setelah 3 detik
+          setTimeout(() => {
+            window.location.href = "dashboard.html";
+          }, 3000);
+        } else {
+          // Tangani event listener jika proses pertukaran token masih berlangsung
+          client.auth.onAuthStateChange((event, s) => {
+            if (event === "SIGNED_IN" && s) {
+              localStorage.setItem("monetrac_local_user", JSON.stringify({
+                id: s.user.id,
+                email: s.user.email,
+                user_metadata: s.user.user_metadata || {}
+              }));
+              showStatus("success", "Email Berhasil Dikonfirmasi!", "Akun Anda telah aktif. Mengalihkan ke Dashboard...", "dashboard.html", "Buka Dashboard");
+              setTimeout(() => window.location.href = "dashboard.html", 2000);
+            }
+          });
+
+          // Timeout cadangan jika tidak ada token sama sekali
+          setTimeout(async () => {
+            const user = await Auth.getCurrentUser();
+            if (!user) {
+              showStatus("error", "Tautan Tidak Valid atau Kedaluwarsa", "Tautan verifikasi email ini mungkin sudah pernah digunakan atau kedaluwarsa. Silakan coba masuk kembali.", "auth.html", "Kembali ke Halaman Masuk");
+            }
+          }, 4000);
+        }
+      } catch (err) {
+        console.error("Verification error:", err);
+        showStatus("error", "Verifikasi Gagal", err.message || "Terjadi kesalahan saat memverifikasi tautan.", "auth.html", "Kembali ke Masuk");
+      }
+    });
+
+    function showStatus(type, title, message, actionUrl, actionText) {
+      const iconBox = document.getElementById("status-icon");
+      const iconGraphic = document.getElementById("icon-graphic");
+      const titleEl = document.getElementById("status-title");
+      const descEl = document.getElementById("status-desc");
+      const actionArea = document.getElementById("action-area");
+      const actionBtn = document.getElementById("btn-action");
+
+      iconBox.className = "status-icon-box " + (type === "success" ? "status-success" : "status-error");
+      iconGraphic.className = "fa-solid " + (type === "success" ? "fa-circle-check" : "fa-circle-xmark");
+
+      titleEl.textContent = title;
+      descEl.textContent = message;
+
+      if (actionUrl) {
+        actionArea.style.display = "block";
+        actionBtn.href = actionUrl;
+        actionBtn.innerHTML = `<i class="fa-solid ${type === 'success' ? 'fa-arrow-right' : 'fa-arrow-left'}"></i> ${actionText}`;
+      }
+    }
+  </script>
+</body>
+</html>
