@@ -607,6 +607,71 @@
         display: none;
       }
     }
+
+    /* Step Cards & Onboarding Guide */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 24px;
+      margin-top: 36px;
+    }
+    .step-card-landing {
+      background: var(--card-light-glass);
+      border: 1px solid var(--border-light);
+      border-radius: 20px;
+      padding: 30px 24px;
+      position: relative;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+      display: flex;
+      flex-direction: column;
+    }
+    .step-card-landing:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 20px 35px rgba(6, 182, 212, 0.12);
+      border-color: var(--aqua-bright);
+    }
+    .step-badge-num {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--aqua-light), var(--aqua-primary));
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 1.15rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 16px rgba(6, 182, 212, 0.25);
+    }
+    .step-card-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-dark);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .step-card-desc {
+      font-size: 0.9rem;
+      color: var(--text-sub);
+      line-height: 1.6;
+    }
+    .step-tip {
+      margin-top: 14px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(6, 182, 212, 0.08);
+      border: 1px solid rgba(6, 182, 212, 0.2);
+      font-size: 0.8rem;
+      color: var(--aqua-primary);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
   </style>
 </head>
 <body data-theme="light">
@@ -775,9 +840,63 @@
         <h3 class="feature-title">Laporan Siap Cetak & Ekspor</h3>
         <p class="feature-desc">Cetak laporan keuangan bulanan format A4 PDF profesional tanpa elemen navbar yang mengganggu, atau ekspor data ke format CSV Excel.</p>
       </div>
+
+      <!-- Feature (BARU): Hutang & Piutang -->
+      <div class="feature-card" style="border-color: rgba(14, 165, 233, 0.35);">
+        <div class="feature-icon-box" style="background: rgba(14, 165, 233, 0.12); color: #0284c7;"><i class="fa-solid fa-hand-holding-dollar"></i></div>
+        <h3 class="feature-title">Hutang & Piutang <span style="font-size:0.7rem;background:var(--accent-gradient);color:#fff;padding:2px 8px;border-radius:99px;margin-left:6px;vertical-align:middle;">Baru</span></h3>
+        <p class="feature-desc">Pantau kewajiban pinjaman Anda dan tagihan piutang ke pihak lain secara teratur. Dilengkapi opsi mutasi kas otomatis dan pencatatan cicilan pelunasan bertahap.</p>
+      </div>
     </div>
   </section>
+  <!-- Guide & Onboarding Section -->
+  <section id="panduan" class="section-container" style="background: linear-gradient(180deg, transparent 0%, rgba(6, 182, 212, 0.03) 50%, transparent 100%);">
+    <div class="section-header">
+      <div class="section-tag">Panduan Memulai</div>
+      <h2 class="section-title">Mulai Kelola Finansial dalam 4 Langkah Mudah</h2>
+      <p class="section-desc">Baru pertama kali menggunakan MoneTrac+? Ikuti panduan praktis ini untuk memaksimalkan seluruh fitur aplikasi dari awal hingga terbiasa.</p>
+    </div>
 
+    <div class="steps-grid">
+      <!-- Step 1 -->
+      <div class="step-card-landing">
+        <div class="step-badge-num">01</div>
+        <h3 class="step-card-title"><i class="fa-solid fa-user-plus" style="color:var(--aqua-primary);font-size:1rem;"></i> Daftar & Konfirmasi</h3>
+        <p class="step-card-desc">Kunjungi halaman pendaftaran, masukkan nama lengkap, email, dan kata sandi Anda. Buka kotak masuk email Anda lalu klik tautan verifikasi akun yang kami kirimkan.</p>
+        <div class="step-tip"><i class="fa-solid fa-envelope-circle-check"></i> Cek inbox / folder spam email</div>
+      </div>
+
+      <!-- Step 2 -->
+      <div class="step-card-landing">
+        <div class="step-badge-num">02</div>
+        <h3 class="step-card-title"><i class="fa-solid fa-wallet" style="color:var(--aqua-primary);font-size:1rem;"></i> Atur Akun & Dompet</h3>
+        <p class="step-card-desc">Buka menu <strong>Akun & Dompet</strong>. Sesuaikan saldo awal rekening bank (BCA, Mandiri), e-wallet (GoPay, OVO), atau kas tunai Anda agar cocok dengan uang fisik Anda.</p>
+        <div class="step-tip"><i class="fa-solid fa-sliders"></i> Mulai dengan saldo nyata saat ini</div>
+      </div>
+
+      <!-- Step 3 -->
+      <div class="step-card-landing">
+        <div class="step-badge-num">03</div>
+        <h3 class="step-card-title"><i class="fa-solid fa-receipt" style="color:var(--aqua-primary);font-size:1rem;"></i> Catat & Tabung</h3>
+        <p class="step-card-desc">Gunakan tombol <strong>+ Transaksi Baru</strong> untuk mencatat pemasukan atau pengeluaran harian. Buat target di <strong>Target Tabungan</strong> dan setor rutin dari dompet Anda.</p>
+        <div class="step-tip"><i class="fa-solid fa-piggy-bank"></i> Alokasikan dana impian rutin</div>
+      </div>
+
+      <!-- Step 4 -->
+      <div class="step-card-landing">
+        <div class="step-badge-num">04</div>
+        <h3 class="step-card-title"><i class="fa-solid fa-chart-line" style="color:var(--aqua-primary);font-size:1rem;"></i> Pantau & Evaluasi</h3>
+        <p class="step-card-desc">Lacak kewajiban di menu <strong>Hutang & Piutang</strong>, pasang batas di <strong>Anggaran</strong>, dan pantau skor kesehatan finansial Anda melalui grafik <strong>KPI Keuangan</strong>.</p>
+        <div class="step-tip"><i class="fa-solid fa-file-pdf"></i> Cetak laporan PDF bulanan</div>
+      </div>
+    </div>
+
+    <div style="margin-top:36px;text-align:center;">
+      <a href="auth.html" class="btn-glow-aqua" style="display:inline-flex;padding:12px 28px;font-size:0.95rem;">
+        <i class="fa-solid fa-arrow-right-to-bracket"></i> Coba Langsung MoneTrac+ Sekarang
+      </a>
+    </div>
+  </section>
   <!-- Interactive Savings Calculator Section -->
   <section id="simulasi" class="section-container">
     <div class="section-header">
