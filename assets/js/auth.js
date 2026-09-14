@@ -39,7 +39,7 @@ const Auth = {
     }
   },
 
-  async register(email, password, fullName) {
+async register(email, password, fullName) {
     const client = SupabaseConfig.getClient();
     if (!client) {
       const mockUser = {
@@ -52,18 +52,25 @@ const Auth = {
     }
 
     try {
+      // Ambil path URL confirm.html saat ini secara dinamis
+      const confirmRedirectUrl = window.location.origin + window.location.pathname.replace(/[^/]*$/, '') + "confirm.html";
+
       const { data, error } = await client.auth.signUp({
         email,
         password,
         options: {
           data: {
             full_name: fullName
-          }
+          },
+          emailRedirectTo: confirmRedirectUrl // Mengarahkan link di email ke confirm.html
         }
       });
       if (error) throw error;
       
-      if (data.user) {
+      // Jika email konfirmasi aktif, session biasanya bernilai null sampai dikonfirmasi
+      const needsEmailConfirm = data.user && !data.session;
+
+      if (data.user && data.session) {
         localStorage.setItem("monetrac_local_user", JSON.stringify({
           id: data.user.id,
           email: data.user.email,
@@ -71,7 +78,12 @@ const Auth = {
         }));
       }
 
-      return { success: true, user: data.user, session: data.session };
+      return { 
+        success: true, 
+        user: data.user, 
+        session: data.session,
+        needsEmailConfirm: needsEmailConfirm 
+      };
     } catch (e) {
       return { success: false, error: e.message };
     }
