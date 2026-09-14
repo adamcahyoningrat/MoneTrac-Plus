@@ -115,7 +115,7 @@
   <script src="assets/js/auth.js"></script>
   <script src="assets/js/utils.js"></script>
   <script src="assets/js/storage.js"></script>
-  <script>
+ <script>
     let currentMode = "login";
 
     document.addEventListener("DOMContentLoaded", async () => {
@@ -176,9 +176,18 @@
       btn.disabled = false;
       btn.innerHTML = currentMode === "register" ? '<i class="fa-solid fa-user-plus"></i> Daftar Akun Baru' : '<i class="fa-solid fa-right-to-bracket"></i> Masuk ke Akun';
 
+      // --- BAGIAN INI YANG DIPERBARUI ---
       if (res.success) {
-        Utils.showToast(currentMode === "register" ? "Pendaftaran berhasil! Mengalihkan..." : "Berhasil masuk!", "success");
-        setTimeout(() => window.location.href = "dashboard.html", 600);
+        if (currentMode === "register" && res.needsEmailConfirm) {
+          // Jika butuh konfirmasi email, tampilkan pesan instruksi cek email
+          Utils.showToast("Pendaftaran berhasil! Silakan periksa inbox email Anda untuk memverifikasi akun.", "success");
+          document.getElementById("auth-subtitle").innerHTML = `<strong style="color:var(--success);">Tautan verifikasi telah dikirim ke ${email}!</strong> Silakan periksa email Anda (termasuk folder spam) untuk mengaktifkan akun.`;
+          document.getElementById("auth-form").reset();
+        } else {
+          // Jika login biasa atau pendaftaran tanpa konfirmasi email
+          Utils.showToast(currentMode === "register" ? "Pendaftaran berhasil! Mengalihkan..." : "Berhasil masuk!", "success");
+          setTimeout(() => window.location.href = "dashboard.html", 600);
+        }
       } else {
         Utils.showToast(res.error || "Gagal melakukan autentikasi", "error");
       }
