@@ -604,7 +604,7 @@ const Modal = {
   // --------------------------------------------------------------------------
   // 5. SAVINGS MODAL
   // --------------------------------------------------------------------------
-  openSavingsGoalModal(goalToEdit = null) {
+openSavingsGoalModal(goalToEdit = null) {
     let modal = document.getElementById("universal-modal");
     if (!modal) {
       modal = document.createElement("div");
@@ -613,7 +613,13 @@ const Modal = {
       document.body.appendChild(modal);
     }
 
-    const isEdit = !!goalToEdit;
+    // Jika yang dikirim adalah ID string, cari objeknya dari Storage._savings
+    let target = goalToEdit;
+    if (typeof goalToEdit === "string") {
+      target = (Storage._savings || []).find(g => g.id === goalToEdit) || null;
+    }
+
+    const isEdit = !!target;
 
     modal.innerHTML = `
       <div class="modal-container">
@@ -626,48 +632,49 @@ const Modal = {
         </div>
 
         <form id="goal-form" class="modal-form-wrapper">
-          <input type="hidden" id="goal-id" value="${goalToEdit ? goalToEdit.id : ''}">
+          <input type="hidden" id="goal-id" value="${target ? target.id : ''}">
 
           <div class="modal-body">
             <div class="form-group">
               <label class="form-label">Nama Target Tabungan *</label>
-              <input type="text" id="goal-name" class="form-control" placeholder="Contoh: Dana Darurat, Beli Motor, Umroh" value="${goalToEdit ? goalToEdit.name : ''}" required>
+              <input type="text" id="goal-name" class="form-control" placeholder="Contoh: Dana Darurat, Beli Motor, Umroh" value="${target ? Utils.escapeHTML(target.name) : ''}" required>
             </div>
 
             <div class="form-group">
               <label class="form-label">Target Nominal (Rp) *</label>
-              <input type="number" id="goal-target-amount" class="form-control" placeholder="0" value="${goalToEdit ? goalToEdit.target_amount : ''}" required min="1000">
+              <input type="number" id="goal-target-amount" class="form-control" placeholder="0" value="${target ? target.target_amount : ''}" required min="1000">
             </div>
 
             <div class="form-group">
-              <label class="form-label">Saldo Awal Terkumpul (Rp)</label>
-              <input type="number" id="goal-current-amount" class="form-control" placeholder="0" value="${goalToEdit ? goalToEdit.current_amount : '0'}">
+              <label class="form-label">Saldo Saat Ini (Rp)</label>
+              <input type="number" id="goal-current-amount" class="form-control" placeholder="0" value="${target ? target.current_amount : '0'}" ${isEdit ? 'readonly style="background:var(--bg-hover);cursor:not-allowed;"' : ''}>
+              ${isEdit ? '<div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px;">Gunakan tombol Setor/Tarik di halaman utama untuk mengubah saldo terkumpul.</div>' : ''}
             </div>
 
             <div class="form-group">
               <label class="form-label">Target Tanggal Tercapai (Opsional)</label>
-              <input type="date" id="goal-target-date" class="form-control" value="${goalToEdit && goalToEdit.target_date ? goalToEdit.target_date.split('T')[0] : ''}">
+              <input type="date" id="goal-target-date" class="form-control" value="${target && target.target_date ? target.target_date.split('T')[0] : ''}">
             </div>
 
             <div class="form-group">
               <label class="form-label">Warna & Ikon</label>
               <div style="display:flex;gap:10px;">
-                <input type="color" id="goal-color" class="form-control" value="${goalToEdit ? goalToEdit.color : '#0891b2'}" style="width:60px;padding:4px;">
+                <input type="color" id="goal-color" class="form-control" value="${target ? target.color : '#0891b2'}" style="width:60px;padding:4px;">
                 <select id="goal-icon" class="form-control" style="flex:1;">
-                  <option value="piggy-bank" ${goalToEdit && goalToEdit.icon === 'piggy-bank' ? 'selected' : ''}>Celengan (Piggy Bank)</option>
-                  <option value="shield-halved" ${goalToEdit && goalToEdit.icon === 'shield-halved' ? 'selected' : ''}>Perisai (Dana Darurat)</option>
-                  <option value="car" ${goalToEdit && goalToEdit.icon === 'car' ? 'selected' : ''}>Kendaraan / Mobil</option>
-                  <option value="house" ${goalToEdit && goalToEdit.icon === 'house' ? 'selected' : ''}>Rumah / Properti</option>
-                  <option value="laptop" ${goalToEdit && goalToEdit.icon === 'laptop' ? 'selected' : ''}>Gadget / Laptop</option>
-                  <option value="plane" ${goalToEdit && goalToEdit.icon === 'plane' ? 'selected' : ''}>Liburan / Traveling</option>
-                  <option value="graduation-cap" ${goalToEdit && goalToEdit.icon === 'graduation-cap' ? 'selected' : ''}>Pendidikan</option>
+                  <option value="piggy-bank" ${target && target.icon === 'piggy-bank' ? 'selected' : ''}>Celengan (Piggy Bank)</option>
+                  <option value="shield-halved" ${target && target.icon === 'shield-halved' ? 'selected' : ''}>Perisai (Dana Darurat)</option>
+                  <option value="car" ${target && target.icon === 'car' ? 'selected' : ''}>Kendaraan / Mobil</option>
+                  <option value="house" ${target && target.icon === 'house' ? 'selected' : ''}>Rumah / Properti</option>
+                  <option value="laptop" ${target && target.icon === 'laptop' ? 'selected' : ''}>Gadget / Laptop</option>
+                  <option value="plane" ${target && target.icon === 'plane' ? 'selected' : ''}>Liburan / Traveling</option>
+                  <option value="graduation-cap" ${target && target.icon === 'graduation-cap' ? 'selected' : ''}>Pendidikan</option>
                 </select>
               </div>
             </div>
 
             <div class="form-group">
               <label class="form-label">Catatan Tambahan</label>
-              <textarea id="goal-notes" class="form-control" rows="2" placeholder="Catatan motivasi atau rincian target...">${goalToEdit ? (goalToEdit.notes || '') : ''}</textarea>
+              <textarea id="goal-notes" class="form-control" rows="2" placeholder="Catatan motivasi atau rincian target...">${target ? (target.notes || '') : ''}</textarea>
             </div>
           </div>
 
@@ -681,7 +688,8 @@ const Modal = {
 
     document.getElementById("goal-form").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const id = document.getElementById("goal-id").value;
+      const rawId = document.getElementById("goal-id").value;
+      const id = (rawId && rawId !== "undefined") ? rawId : undefined;
       const name = document.getElementById("goal-name").value;
       const targetAmount = Number(document.getElementById("goal-target-amount").value);
       const currentAmount = Number(document.getElementById("goal-current-amount").value) || 0;
@@ -691,7 +699,7 @@ const Modal = {
       const notes = document.getElementById("goal-notes").value;
 
       const res = await Storage.saveSavingsGoal({
-        id: id || undefined,
+        id: id,
         name,
         target_amount: targetAmount,
         current_amount: currentAmount,
@@ -712,7 +720,6 @@ const Modal = {
 
     modal.classList.add("active");
   },
-
 
   
   openSavingsMutationModal(goalId, mutationType = "deposit") {
