@@ -291,7 +291,7 @@ const Storage = {
     }
   },
 
-  async saveTransaction(transaction) {
+async saveTransaction(transaction) {
     const client = SupabaseConfig.getClient();
     const user = await Auth.getCurrentUser();
     if (!client || !user) return { success: false, error: "Sesi tidak aktif." };
@@ -304,7 +304,30 @@ const Storage = {
     const rawDate = transaction.date ? transaction.date.substring(0, 10) : new Date().toISOString().split("T")[0];
 
     try {
-      // 1. Update Saldo Akun di Supabase
+      // 1. JIKA EDIT: Netralkan (Revert) efek saldo transaksi lama terlebih dahulu
+      if (transaction.id && isValidUUID(transaction.id)) {
+        const { data: oldTx } = await client
+          .from("transactions")
+          .select("*")
+          .eq("id", transaction.id)
+          .eq("user_id", user.id)
+          .single();
+
+        if (oldTx) {
+          const oldAmt = Number(oldTx.amount) || 0;
+          const oldFee = Number(oldTx.admin_fee) || 0;
+          if (oldTx.type === "Expense" && oldTx.account_id) {
+            await this.updateAccountBalance(oldTx.account_id, oldAmt); // Kembalikan uang pengeluaran lama
+          } else if (oldTx.type === "Income" && oldTx.account_id) {
+            await this.updateAccountBalance(oldTx.account_id, -oldAmt); // Tarik kembali pemasukan lama
+          } else if (oldTx.type === "Transfer") {
+            if (oldTx.account_id) await this.updateAccountBalance(oldTx.account_id, oldAmt + oldFee);
+            if (oldTx.to_account_id) await this.updateAccountBalance(oldTx.to_account_id, -oldAmt);
+          }
+        }
+      }
+
+      // 2. Terapkan efek saldo baru
       if (type === "Expense") {
         if (accountId) await this.updateAccountBalance(accountId, -amount);
       } else if (type === "Income") {
@@ -314,7 +337,7 @@ const Storage = {
         if (toAccountId) await this.updateAccountBalance(toAccountId, amount);
       }
 
-      // 2. Simpan Transaksi Langsung ke Supabase (INSERT untuk baru, UPDATE untuk edit)
+      // 3. Simpan pembaruan data transaksi ke Supabase
       const payload = {
         user_id: user.id,
         type: type,
@@ -352,13 +375,13 @@ const Storage = {
       }
 
       await this.getTransactions();
+      await this.getAccounts();
       return { success: true, data: resData };
     } catch (err) {
       console.error("Supabase saveTransaction error:", err);
       return { success: false, error: err.message };
     }
   },
-
   async deleteTransaction(txId) {
     const client = SupabaseConfig.getClient();
     const user = await Auth.getCurrentUser();
