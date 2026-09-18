@@ -613,13 +613,28 @@ openSavingsGoalModal(goalToEdit = null) {
       document.body.appendChild(modal);
     }
 
-    // Jika yang dikirim adalah ID string, cari objeknya dari Storage._savings
-    let target = goalToEdit;
-    if (typeof goalToEdit === "string") {
-      target = (Storage._savings || []).find(g => g.id === goalToEdit) || null;
+    // Cari objek target tabungan dari berbagai sumber (bisa dari objek langsung atau via ID)
+    let target = null;
+    if (goalToEdit && typeof goalToEdit === "object") {
+      target = goalToEdit;
+    } else if (typeof goalToEdit === "string") {
+      if (typeof allSavingsGoals !== "undefined" && Array.isArray(allSavingsGoals)) {
+        target = allSavingsGoals.find(g => g.id === goalToEdit);
+      }
+      if (!target && Storage && Array.isArray(Storage._savings)) {
+        target = Storage._savings.find(g => g.id === goalToEdit);
+      }
     }
 
     const isEdit = !!target;
+    const goalId = target ? target.id : "";
+    const goalName = target && target.name ? target.name : "";
+    const goalTargetAmount = target && target.target_amount ? target.target_amount : "";
+    const goalCurrentAmount = target && target.current_amount ? target.current_amount : 0;
+    const goalTargetDate = target && target.target_date ? target.target_date.split("T")[0] : "";
+    const goalColor = target && target.color ? target.color : "#0891b2";
+    const goalIcon = target && target.icon ? target.icon : "piggy-bank";
+    const goalNotes = target && target.notes ? target.notes : "";
 
     modal.innerHTML = `
       <div class="modal-container">
@@ -632,55 +647,55 @@ openSavingsGoalModal(goalToEdit = null) {
         </div>
 
         <form id="goal-form" class="modal-form-wrapper">
-          <input type="hidden" id="goal-id" value="${target ? target.id : ''}">
+          <input type="hidden" id="goal-id" value="${goalId}">
 
           <div class="modal-body">
             <div class="form-group">
               <label class="form-label">Nama Target Tabungan *</label>
-              <input type="text" id="goal-name" class="form-control" placeholder="Contoh: Dana Darurat, Beli Motor, Umroh" value="${target ? Utils.escapeHTML(target.name) : ''}" required>
+              <input type="text" id="goal-name" class="form-control" placeholder="Contoh: Dana Darurat, Beli Motor, Umroh" value="${Utils.escapeHTML(goalName)}" required>
             </div>
 
             <div class="form-group">
               <label class="form-label">Target Nominal (Rp) *</label>
-              <input type="number" id="goal-target-amount" class="form-control" placeholder="0" value="${target ? target.target_amount : ''}" required min="1000">
+              <input type="number" id="goal-target-amount" class="form-control" placeholder="0" value="${goalTargetAmount}" required min="1000">
             </div>
 
             <div class="form-group">
-              <label class="form-label">Saldo Saat Ini (Rp)</label>
-              <input type="number" id="goal-current-amount" class="form-control" placeholder="0" value="${target ? target.current_amount : '0'}" ${isEdit ? 'readonly style="background:var(--bg-hover);cursor:not-allowed;"' : ''}>
-              ${isEdit ? '<div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px;">Gunakan tombol Setor/Tarik di halaman utama untuk mengubah saldo terkumpul.</div>' : ''}
+              <label class="form-label">Saldo Terkumpul Saat Ini (Rp)</label>
+              <input type="number" id="goal-current-amount" class="form-control" placeholder="0" value="${goalCurrentAmount}" ${isEdit ? 'readonly style="background:var(--bg-hover);cursor:not-allowed;"' : ''}>
+              ${isEdit ? '<div style="font-size:0.78rem;color:var(--text-muted);margin-top:4px;">Untuk menambah/mengurangi saldo tabungan, gunakan tombol Setor atau Tarik di kartu tabungan.</div>' : ''}
             </div>
 
             <div class="form-group">
               <label class="form-label">Target Tanggal Tercapai (Opsional)</label>
-              <input type="date" id="goal-target-date" class="form-control" value="${target && target.target_date ? target.target_date.split('T')[0] : ''}">
+              <input type="date" id="goal-target-date" class="form-control" value="${goalTargetDate}">
             </div>
 
             <div class="form-group">
               <label class="form-label">Warna & Ikon</label>
               <div style="display:flex;gap:10px;">
-                <input type="color" id="goal-color" class="form-control" value="${target ? target.color : '#0891b2'}" style="width:60px;padding:4px;">
+                <input type="color" id="goal-color" class="form-control" value="${goalColor}" style="width:60px;padding:4px;">
                 <select id="goal-icon" class="form-control" style="flex:1;">
-                  <option value="piggy-bank" ${target && target.icon === 'piggy-bank' ? 'selected' : ''}>Celengan (Piggy Bank)</option>
-                  <option value="shield-halved" ${target && target.icon === 'shield-halved' ? 'selected' : ''}>Perisai (Dana Darurat)</option>
-                  <option value="car" ${target && target.icon === 'car' ? 'selected' : ''}>Kendaraan / Mobil</option>
-                  <option value="house" ${target && target.icon === 'house' ? 'selected' : ''}>Rumah / Properti</option>
-                  <option value="laptop" ${target && target.icon === 'laptop' ? 'selected' : ''}>Gadget / Laptop</option>
-                  <option value="plane" ${target && target.icon === 'plane' ? 'selected' : ''}>Liburan / Traveling</option>
-                  <option value="graduation-cap" ${target && target.icon === 'graduation-cap' ? 'selected' : ''}>Pendidikan</option>
+                  <option value="piggy-bank" ${goalIcon === 'piggy-bank' ? 'selected' : ''}>Celengan (Piggy Bank)</option>
+                  <option value="shield-halved" ${goalIcon === 'shield-halved' ? 'selected' : ''}>Perisai (Dana Darurat)</option>
+                  <option value="car" ${goalIcon === 'car' ? 'selected' : ''}>Kendaraan / Mobil</option>
+                  <option value="house" ${goalIcon === 'house' ? 'selected' : ''}>Rumah / Properti</option>
+                  <option value="laptop" ${goalIcon === 'laptop' ? 'selected' : ''}>Gadget / Laptop</option>
+                  <option value="plane" ${goalIcon === 'plane' ? 'selected' : ''}>Liburan / Traveling</option>
+                  <option value="graduation-cap" ${goalIcon === 'graduation-cap' ? 'selected' : ''}>Pendidikan</option>
                 </select>
               </div>
             </div>
 
             <div class="form-group">
               <label class="form-label">Catatan Tambahan</label>
-              <textarea id="goal-notes" class="form-control" rows="2" placeholder="Catatan motivasi atau rincian target...">${target ? (target.notes || '') : ''}</textarea>
+              <textarea id="goal-notes" class="form-control" rows="2" placeholder="Catatan motivasi atau rincian target...">${goalNotes}</textarea>
             </div>
           </div>
 
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" onclick="Modal.close()">Batal</button>
-            <button type="submit" class="btn btn-primary">Simpan Target</button>
+            <button type="submit" class="btn btn-primary" id="btn-submit-goal">${isEdit ? 'Perbarui Target' : 'Simpan Target'}</button>
           </div>
         </form>
       </div>
@@ -689,7 +704,7 @@ openSavingsGoalModal(goalToEdit = null) {
     document.getElementById("goal-form").addEventListener("submit", async (e) => {
       e.preventDefault();
       const rawId = document.getElementById("goal-id").value;
-      const id = (rawId && rawId !== "undefined") ? rawId : undefined;
+      const id = (rawId && rawId !== "undefined" && rawId.trim() !== "") ? rawId.trim() : undefined;
       const name = document.getElementById("goal-name").value;
       const targetAmount = Number(document.getElementById("goal-target-amount").value);
       const currentAmount = Number(document.getElementById("goal-current-amount").value) || 0;
@@ -698,29 +713,43 @@ openSavingsGoalModal(goalToEdit = null) {
       const icon = document.getElementById("goal-icon").value;
       const notes = document.getElementById("goal-notes").value;
 
-      const res = await Storage.saveSavingsGoal({
-        id: id,
-        name,
-        target_amount: targetAmount,
-        current_amount: currentAmount,
-        target_date: targetDate || null,
-        color,
-        icon,
-        notes
-      });
+      const submitBtn = document.getElementById("btn-submit-goal");
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...`;
+      }
 
-      Modal.close();
-      if (res.success) {
-        Utils.showToast("Target Tabungan berhasil disimpan!", "success");
-        if (typeof renderSavings === "function") renderSavings();
-      } else {
-        Utils.showToast("Gagal menyimpan target: " + res.error, "error");
+      try {
+        const res = await Storage.saveSavingsGoal({
+          id: id,
+          name,
+          target_amount: targetAmount,
+          current_amount: currentAmount,
+          target_date: targetDate || null,
+          color,
+          icon,
+          notes
+        });
+
+        Modal.close();
+        if (res.success) {
+          Utils.showToast(isEdit ? "Target tabungan berhasil diperbarui!" : "Target tabungan berhasil disimpan!", "success");
+          if (typeof renderSavings === "function") renderSavings();
+        } else {
+          Utils.showToast("Gagal menyimpan target: " + res.error, "error");
+        }
+      } catch (err) {
+        Utils.showToast("Terjadi galat: " + err.message, "error");
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = isEdit ? 'Perbarui Target' : 'Simpan Target';
+        }
       }
     });
 
     modal.classList.add("active");
   },
-
   
   openSavingsMutationModal(goalId, mutationType = "deposit") {
     let modal = document.getElementById("universal-modal");
